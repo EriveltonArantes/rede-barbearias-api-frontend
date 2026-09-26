@@ -455,3 +455,8 @@ input:disabled, select:disabled { opacity: .6; }
 .balao-wpp a { color: #53bdeb; }
 .celula-msg { max-width: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (max-width: 900px) { .atendimento-grid { grid-template-columns: 1fr; } }
+.chips-sim { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; }
+.chip { background: var(--bg-soft); border: 1px solid var(--borda); color: var(--text); border-radius: 999px; padding: 4px 10px; font-size: .8rem; cursor: pointer; }
+.chip:hover { border-color: var(--ouro); }
+.sem-resposta { color: #8696a0; font-style: italic; font-size: .8rem; align-self: center; }
+.acao-conversa { font-size: .82rem; font-weight: 600; }

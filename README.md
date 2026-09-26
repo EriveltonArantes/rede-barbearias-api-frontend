@@ -18,7 +18,7 @@ React 18 · Vite · CSS próprio (gráficos em SVG, sem biblioteca) · Vitest + 
   - Agenda em grade por barbeiro (linha do "agora", folgas, clique no vazio pra agendar), finalização com Pix/clube/fidelidade, lembretes do dia.
   - Agendamentos (filtros + CSV), clientes (ficha completa), PDV de produtos com leitor de código de barras, estoque.
   - Financeiro: resultado (DRE), caixa do dia imprimível, comissões exportáveis, despesas recorrentes.
-  - Clube de assinatura, marketing (campanhas por WhatsApp + cupons), avaliações, equipe e folgas, unidades e serviços, usuários e auditoria, notificações automáticas (lembrete no dia e 1h antes) e resposta automática no WhatsApp com simulador da conversa.
+  - Clube de assinatura, marketing (campanhas por WhatsApp + cupons), avaliações, equipe e folgas, unidades e serviços, usuários e auditoria, notificações automáticas (lembrete no dia e 1h antes, com botões Confirmo/Preciso cancelar) e atendimento automático no WhatsApp (boas-vindas, aviso fora do horário, PARAR/VOLTAR) com simulador da conversa. A página "meu horário" permite confirmar presença.
 - **Área do cliente**: meus horários, agendar, fidelidade e clube, meus dados.
 
 Responsivo (menu lateral vira gaveta no celular).

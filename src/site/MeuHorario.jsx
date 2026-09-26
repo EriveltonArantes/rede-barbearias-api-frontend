@@ -51,6 +51,14 @@ export default function MeuHorario({ codigoInicial }) {
                href={linkWhatsApp(ag.unidadeWhatsapp, `Olá! Sobre meu agendamento ${ag.codigo}...`)}>💬 Falar com a unidade</a>
           )}
 
+          {ag.status === "AGENDADO" && new Date(ag.inicio) > new Date() && (
+            <div className="bloco-acao">
+              <h4>Vai vir? Confirme sua presença</h4>
+              <p className="campo-dica">Ajuda a barbearia a organizar a agenda — leva 1 segundo.</p>
+              <button className="btn btn-primary" disabled={ocupado}
+                      onClick={() => agir(`/api/publico/agendamentos/${ag.codigo}/confirmar`, {}, "Presença confirmada! Te esperamos 💈")}>✅ Confirmar presença</button>
+            </div>
+          )}
           {ag.podeCancelar && (
             <div className="bloco-acao">
               <h4>Precisa cancelar?</h4>

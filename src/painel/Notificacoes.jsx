@@ -159,7 +159,8 @@ export default function Notificacoes() {
                 <li>Na hora de adicionar o número, escolha a opção de <b>conectar o número que já está no app WhatsApp Business</b> e confirme pelo celular. Assim o sistema envia as mensagens e a equipe continua respondendo pelo celular, no mesmo número.
                   <br /><small className="texto-fraco">Se essa opção não aparecer pra sua conta, a Meta ainda não liberou: dá pra usar um número separado só pro sistema, ou continuar no modo manual (botão 🔔 Lembretes na Agenda), que já funciona hoje.</small></li>
                 <li>Gere um <b>token permanente</b> (usuário do sistema, permissões <code>whatsapp_business_messaging</code> e <code>whatsapp_business_management</code>) e anote o <i>Phone number ID</i>.</li>
-                <li>Em <i>Modelos de mensagem</i>, crie os modelos abaixo com o <b>mesmo nome</b>, categoria <b>Utilidade</b>, idioma <b>Português (BR)</b> — é só copiar o texto.</li>
+                <li>Em <i>Modelos de mensagem</i>, crie os modelos abaixo com o <b>mesmo nome</b>, categoria <b>Utilidade</b>, idioma <b>Português (BR)</b> — é só copiar o texto.
+                  Nos lembretes, adicione os <b>botões de resposta rápida</b> indicados (é por eles que o cliente confirma ou cancela) e, em todos, o rodapé <i>"{c.rodapeWhatsApp}"</i>.</li>
                 <li>Em <i>WhatsApp → Configuração → Webhook</i>: URL de callback <WebhookUrl url={c.webhook.url} />, token de verificação = o valor que você colocar em <code>WHATSAPP_VERIFY_TOKEN</code> (invente uma senha), e assine o campo <code>messages</code>.</li>
                 <li>No Render, em <i>Environment</i> do serviço <code>rede-barbearias-api</code>: <code>WHATSAPP_TOKEN</code>, <code>WHATSAPP_PHONE_NUMBER_ID</code>, <code>WHATSAPP_VERIFY_TOKEN</code> e <code>WHATSAPP_APP_SECRET</code> (em <i>Configurações do app → Básico → Chave secreta</i>).</li>
                 <li>Pronto. Se a barbearia usava a "mensagem de saudação" do próprio app, desligue lá pra o cliente não receber duas boas-vindas.</li>
@@ -172,6 +173,7 @@ export default function Notificacoes() {
                       <button type="button" className="btn btn-ghost btn-sm" onClick={() => { copiar(texto); setCopiado(nome); setTimeout(() => setCopiado(""), 1500); }}>{copiado === nome ? "Copiado ✓" : "Copiar texto"}</button>
                     </div>
                     <pre>{texto}</pre>
+                    {c.botoesWhatsApp?.[nome] && <small className="texto-fraco">Botões de resposta rápida (nessa ordem): <b>{c.botoesWhatsApp[nome].join("  ·  ")}</b></small>}
                   </div>
                 ))}
               </div>
@@ -239,8 +241,8 @@ function AtendimentoAutomatico({ webhook: w }) {
   const atend = useApi("/api/notificacoes/atendimento");
   const conv = useApi("/api/notificacoes/atendimento/conversas");
   const [form, setForm] = React.useState(null);
-  const [sim, setSim] = React.useState({ nome: "João", telefone: "", texto: "Oi, tem horário amanhã?" });
-  const [resposta, setResposta] = React.useState("");
+  const [sim, setSim] = React.useState({ nome: "João", telefone: "", texto: "Oi, tem horário amanhã?", foraDoHorario: false });
+  const [resposta, setResposta] = React.useState(null);
   const [executar, ocupado] = useAcao();
   const [executarSim, simulando] = useAcao();
 
@@ -251,13 +253,16 @@ function AtendimentoAutomatico({ webhook: w }) {
     const r = await executar(() => api("/api/notificacoes/atendimento", { method: "PUT", body: form }), "Resposta automática salva");
     if (r) { setForm(r); simular(); }
   };
-  const simular = async (e) => {
+  const simular = async (e, sobrescreve) => {
     if (e) e.preventDefault();
-    const r = await executarSim(() => api("/api/notificacoes/atendimento/simular", { method: "POST", body: { nome: sim.nome, telefone: sim.telefone } }));
-    if (r) setResposta(r.resposta);
+    const s2 = { ...sim, ...sobrescreve };
+    if (sobrescreve) setSim(s2);
+    const r = await executarSim(() => api("/api/notificacoes/atendimento/simular", { method: "POST", body: s2 }));
+    if (r) setResposta(r);
   };
   React.useEffect(() => { if (atend.dados) simular(); /* previa inicial */ // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atend.dados]);
+  const recarregarTudo = () => { conv.recarregar(); };
 
   const lista = conv.dados || [];
   const podeEditar = perms.admin;
@@ -266,9 +271,10 @@ function AtendimentoAutomatico({ webhook: w }) {
     <section className="atendimento-auto">
       <h3 className="secao-titulo">🤖 Resposta automática no WhatsApp</h3>
       <p className="texto-fraco">
-        O cliente manda mensagem no WhatsApp da barbearia e recebe na hora as boas-vindas com o link pra agendar.
-        Se ele já tem horário marcado, a resposta traz o horário e o link pra ver ou cancelar, e a cartela de fidelidade dele.
-        Depois disso o sistema fica quieto e a conversa segue com a equipe, no próprio celular.
+        O cliente manda mensagem no WhatsApp da barbearia e recebe na hora as boas-vindas com o link pra agendar
+        (ou, com tudo fechado, o aviso de quando abre — com o link também). Se já tem horário marcado, a resposta traz o horário,
+        o link pra ver ou cancelar e a cartela de fidelidade. No lembrete ele toca em <b>Confirmo</b> ou <b>Preciso cancelar</b> (ou responde 1 / 2)
+        e a agenda atualiza sozinha. Quem responde <b>PARAR</b> não recebe mais nada automático. Fora isso, o sistema fica quieto e a conversa segue com a equipe, no próprio celular.
       </p>
       {w && (
         <div className={"aviso-faixa " + (w.pronto ? "bom" : "aviso")}>
@@ -288,6 +294,15 @@ function AtendimentoAutomatico({ webhook: w }) {
               <Campo label="Texto" dica="Use {nome} (primeiro nome do cliente) e {link_agendar} (link do agendamento online — obrigatório).">
                 <textarea rows={9} value={form.saudacao} disabled={!podeEditar} maxLength={1000} onChange={(e) => setForm({ ...form, saudacao: e.target.value })} />
               </Campo>
+              <label className="check-linha">
+                <input type="checkbox" checked={form.foraHorarioAtivo} disabled={!podeEditar} onChange={(e) => setForm({ ...form, foraHorarioAtivo: e.target.checked })} />
+                Com todas as unidades fechadas, responder com a mensagem abaixo
+              </label>
+              {form.foraHorarioAtivo && (
+                <Campo label="Mensagem fora do horário" dica="Além de {nome} e {link_agendar}, use {abre} — vira “amanhã às 9h”, “na segunda-feira às 9h”... pelo horário cadastrado das unidades.">
+                  <textarea rows={7} value={form.mensagemForaHorario} disabled={!podeEditar} maxLength={1000} onChange={(e) => setForm({ ...form, mensagemForaHorario: e.target.value })} />
+                </Campo>
+              )}
               <div className="form-grade">
                 <Campo label="Responder o mesmo cliente de novo depois de">
                   <select value={form.intervaloHoras} disabled={!podeEditar} onChange={(e) => setForm({ ...form, intervaloHoras: Number(e.target.value) })}>
@@ -304,7 +319,7 @@ function AtendimentoAutomatico({ webhook: w }) {
               {podeEditar ? (
                 <div className="acoes-linha">
                   <button className="btn btn-primary" disabled={ocupado}>{ocupado ? "Salvando..." : "Salvar"}</button>
-                  <button type="button" className="btn btn-ghost" onClick={() => setForm({ ...form, saudacao: TEXTO_PADRAO })}>Voltar ao texto padrão</button>
+                  <button type="button" className="btn btn-ghost" onClick={() => setForm({ ...form, saudacao: TEXTO_PADRAO, mensagemForaHorario: TEXTO_FORA_PADRAO })}>Voltar aos textos padrão</button>
                 </div>
               ) : <small className="texto-fraco">Só o administrador altera a mensagem.</small>}
             </form>
@@ -318,27 +333,41 @@ function AtendimentoAutomatico({ webhook: w }) {
             <Campo label="Telefone (opcional)" dica="De um cliente cadastrado, pra ver com o horário dele"><input value={sim.telefone} onChange={(e) => setSim({ ...sim, telefone: telefone(e.target.value) })} placeholder="(31) 99999-9999" /></Campo>
           </div>
           <Campo label="Mensagem do cliente"><input value={sim.texto} onChange={(e) => setSim({ ...sim, texto: e.target.value })} /></Campo>
+          <div className="chips-sim">
+            {[["Oi, tem horário?", "👋 Oi"], ["1", "1 · confirmar"], ["2", "2 · cancelar"], ["PARAR", "🚫 PARAR"]].map(([t, r]) => (
+              <button key={t} type="button" className="chip" onClick={() => simular(null, { texto: t })}>{r}</button>
+            ))}
+          </div>
+          <label className="check-linha">
+            <input type="checkbox" checked={sim.foraDoHorario} onChange={(e) => simular(null, { foraDoHorario: e.target.checked })} />
+            simular com a barbearia fechada
+          </label>
           <button className="btn btn-ghost" disabled={simulando}>{simulando ? "Gerando..." : "Simular conversa"}</button>
           <div className="tela-wpp">
             {sim.texto && <BalaoWhatsApp texto={sim.texto} lado="enviada" />}
-            {resposta && <BalaoWhatsApp texto={resposta} />}
+            {resposta?.resposta ? <BalaoWhatsApp texto={resposta.resposta} /> : resposta && <small className="sem-resposta">(sem resposta automática: {resposta.motivo})</small>}
           </div>
-          <small className="texto-fraco">A prévia usa o texto salvo. Nada é enviado.</small>
+          {resposta && <small className="texto-fraco">{ACOES[resposta.acao] || resposta.acao}. A prévia usa o texto salvo e não envia nem altera nada.
+            {["CONFIRMAR", "CANCELAR"].includes(resposta.acao) ? "" : " “1” e “2” só mexem na agenda de quem recebeu lembrete — informe o telefone de um cliente com horário lembrado pra ver."}</small>}
         </form>
       </div>
 
-      <h3 className="secao-titulo">💬 Quem mandou mensagem</h3>
+      <div className="acoes-linha entre">
+        <h3 className="secao-titulo">💬 Quem mandou mensagem</h3>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={recarregarTudo}>↻ Atualizar</button>
+      </div>
       <Estado req={conv} vazio={<Vazio icone="💬" texto="Ninguém escreveu ainda — as conversas aparecem aqui assim que o WhatsApp oficial estiver ligado." />}>
         {() => (
           <div className="tabela-wrap">
             <table className="tabela">
-              <thead><tr><th>Última mensagem</th><th>Contato</th><th>Mensagem</th><th>Resposta automática</th><th></th></tr></thead>
+              <thead><tr><th>Última mensagem</th><th>Contato</th><th>Mensagem</th><th>O que aconteceu</th><th></th></tr></thead>
               <tbody>{lista.map((c) => (
                 <tr key={c.id}>
                   <td>{dataHora(c.ultimaRecebidaEm)}<br /><small className="texto-fraco">{c.totalRecebidas} msg</small></td>
-                  <td>{c.nome || "—"}<br /><small className="texto-fraco">{telefone(c.telefone.replace(/^55/, ""))}</small>{c.clienteId && <><br /><Pill tom="bom">cliente</Pill></>}</td>
+                  <td>{c.nome || "—"}<br /><small className="texto-fraco">{telefone(c.telefone.replace(/^55/, ""))}</small>{c.clienteId && <><br /><Pill tom="bom">cliente</Pill></>}{c.optOut && <> <Pill tom="ruim">não quer mensagens</Pill></>}</td>
                   <td className="celula-msg">{c.ultimaMensagem}</td>
-                  <td>{c.ultimaRespostaEm ? <><Pill tom="bom">respondida</Pill><br /><small className="texto-fraco">{dataHora(c.ultimaRespostaEm)}</small></>
+                  <td>{c.ultimaAcao && <><b className="acao-conversa">{c.ultimaAcao}</b><br /></>}
+                    {c.ultimaRespostaEm ? <><Pill tom="bom">respondida</Pill><br /><small className="texto-fraco">{dataHora(c.ultimaRespostaEm)}</small></>
                     : c.erroResposta ? <><Pill tom="ruim">não enviada</Pill><br /><small className="texto-erro">{c.erroResposta}</small></> : <Pill>—</Pill>}</td>
                   <td><a className="btn btn-ghost btn-sm" href={linkWhatsApp(c.telefone.replace(/^55/, ""), "")} target="_blank" rel="noreferrer">Abrir conversa</a></td>
                 </tr>
@@ -357,3 +386,16 @@ Pra agendar seu horário é rapidinho: escolha a unidade, o barbeiro e o horári
 {link_agendar}
 
 Se preferir falar com a gente, é só mandar sua mensagem que já te respondemos 😉`;
+
+const TEXTO_FORA_PADRAO = `Olá, {nome}! 💈 Agora estamos fechados — voltamos {abre}.
+
+Mas você já pode garantir seu horário agora mesmo, é rapidinho 👇
+{link_agendar}
+
+Sua mensagem fica aqui e respondemos assim que abrirmos 😉`;
+
+const ACOES = {
+  SAUDACAO: "Resposta: boas-vindas", FORA_HORARIO: "Resposta: aviso de fechado", CONFIRMAR: "Ação: confirma a presença na agenda",
+  CANCELAR: "Ação: cancela o horário e libera a cadeira", INFORMAR: "Resposta: só informa, sem mudar a agenda",
+  OPT_OUT: "Ação: para de mandar mensagens automáticas pra esse número", OPT_IN: "Ação: volta a mandar mensagens", NENHUMA: "Sem resposta",
+};
