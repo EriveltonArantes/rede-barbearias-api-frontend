@@ -5,7 +5,7 @@ import { Cabecalho, Campo, Estado, Modal, Pill, StatusPill, Vazio, useAcao, useA
 import { copiar, dataExtenso, dataHora, hojeISO, hora, linkWhatsApp, primeiroNome, telefone } from "../util.js";
 
 export const TIPOS_MSG = {
-  CONFIRMACAO: "Confirmação", LEMBRETE: "Lembrete do dia", REAGENDAMENTO: "Horário alterado",
+  CONFIRMACAO: "Confirmação", LEMBRETE: "Lembrete do dia", LEMBRETE_PROXIMO: "Lembrete 1h antes", REAGENDAMENTO: "Horário alterado",
   CANCELAMENTO: "Cancelamento", AVALIACAO: "Pedido de avaliação",
 };
 const CANAIS = { EMAIL: "✉️ E-mail", WHATSAPP: "💬 WhatsApp" };
@@ -60,8 +60,8 @@ export function LembretesDia({ unidadeId, data, onClose }) {
   return (
     <Modal titulo={`Lembretes — ${dataExtenso(data)}`} onClose={onClose} largura={680}>
       <p className="texto-fraco">
-        Clientes com e-mail (ou com WhatsApp oficial ligado) recebem o lembrete sozinhos pela manhã.
-        Pros demais, clique em 💬: o WhatsApp abre com a mensagem pronta, é só apertar enviar.
+        Com o WhatsApp oficial ligado (ou e-mail cadastrado), o cliente recebe o lembrete sozinho: de manhã e de novo pouco antes do horário.
+        Enquanto isso não estiver ligado, clique em 💬: o WhatsApp da barbearia abre com a mensagem pronta, é só apertar enviar.
       </p>
       <Estado req={req} vazio={<Vazio icone="🗓️" texto="Nenhum cliente marcado nesse dia." />}>
         {() => (
@@ -121,9 +121,11 @@ export default function Notificacoes() {
                 <h3>⏰ Quando sai cada mensagem</h3>
                 <ul className="lista-simples">
                   <li><span>Confirmação</span><small className="texto-fraco">na hora do agendamento</small></li>
-                  <li><span>Lembrete</span><small className="texto-fraco">no dia, a partir das 7h</small></li>
+                  <li><span>Lembrete do dia</span><small className="texto-fraco">no dia, a partir das {c.horarios.horaLembrete}h</small></li>
+                  {c.horarios.lembreteAntesMinutos > 0 && <li><span>Lembrete antes do horário</span><small className="texto-fraco">{duracao(c.horarios.lembreteAntesMinutos)} antes</small></li>}
                   <li><span>Alteração / cancelamento</span><small className="texto-fraco">na hora</small></li>
-                  <li><span>Pedido de avaliação</span><small className="texto-fraco">1h30 depois do pagamento</small></li>
+                  <li><span>Avaliação + cartela fidelidade</span><small className="texto-fraco">{duracao(c.horarios.avaliacaoAposMinutos)} depois do pagamento</small></li>
+                  <li><span>Resposta automática</span><small className="texto-fraco">quando o cliente escreve no WhatsApp</small></li>
                 </ul>
               </div>
             </div>
@@ -150,12 +152,17 @@ export default function Notificacoes() {
               </ol>
             </details>
             <details className="cartao config-ajuda" style={{ marginTop: 12 }}>
-              <summary><b>Como ligar o WhatsApp oficial</b></summary>
+              <summary><b>Como ligar o WhatsApp oficial usando o número que a barbearia já usa</b></summary>
               <ol>
-                <li>No <a href="https://business.facebook.com" target="_blank" rel="noreferrer">Meta Business</a>, crie um app do tipo <i>Business</i> e adicione o produto <i>WhatsApp</i>.</li>
-                <li>Cadastre um número exclusivo da barbearia (ele deixa de funcionar no app comum) e gere um <b>token permanente</b> de usuário do sistema.</li>
-                <li>Em <i>Modelos de mensagem</i>, crie os 5 modelos abaixo com o <b>mesmo nome</b>, categoria <b>Utilidade</b>, idioma <b>Português (BR)</b> — copie o texto.</li>
-                <li>No Render, adicione <code>WHATSAPP_TOKEN</code> e <code>WHATSAPP_PHONE_NUMBER_ID</code>. Pronto: as mensagens passam a sair também por WhatsApp.</li>
+                <li>No celular, use o app <b>WhatsApp Business</b> (grátis). Quem usa o WhatsApp comum pode migrar pro Business: o número e as conversas continuam.</li>
+                <li>Crie uma conta no <a href="https://business.facebook.com" target="_blank" rel="noreferrer">Meta Business</a> e um app do tipo <i>Business</i> em <a href="https://developers.facebook.com/apps" target="_blank" rel="noreferrer">developers.facebook.com</a>, com o produto <i>WhatsApp</i>.</li>
+                <li>Na hora de adicionar o número, escolha a opção de <b>conectar o número que já está no app WhatsApp Business</b> e confirme pelo celular. Assim o sistema envia as mensagens e a equipe continua respondendo pelo celular, no mesmo número.
+                  <br /><small className="texto-fraco">Se essa opção não aparecer pra sua conta, a Meta ainda não liberou: dá pra usar um número separado só pro sistema, ou continuar no modo manual (botão 🔔 Lembretes na Agenda), que já funciona hoje.</small></li>
+                <li>Gere um <b>token permanente</b> (usuário do sistema, permissões <code>whatsapp_business_messaging</code> e <code>whatsapp_business_management</code>) e anote o <i>Phone number ID</i>.</li>
+                <li>Em <i>Modelos de mensagem</i>, crie os modelos abaixo com o <b>mesmo nome</b>, categoria <b>Utilidade</b>, idioma <b>Português (BR)</b> — é só copiar o texto.</li>
+                <li>Em <i>WhatsApp → Configuração → Webhook</i>: URL de callback <WebhookUrl url={c.webhook.url} />, token de verificação = o valor que você colocar em <code>WHATSAPP_VERIFY_TOKEN</code> (invente uma senha), e assine o campo <code>messages</code>.</li>
+                <li>No Render, em <i>Environment</i> do serviço <code>rede-barbearias-api</code>: <code>WHATSAPP_TOKEN</code>, <code>WHATSAPP_PHONE_NUMBER_ID</code>, <code>WHATSAPP_VERIFY_TOKEN</code> e <code>WHATSAPP_APP_SECRET</code> (em <i>Configurações do app → Básico → Chave secreta</i>).</li>
+                <li>Pronto. Se a barbearia usava a "mensagem de saudação" do próprio app, desligue lá pra o cliente não receber duas boas-vindas.</li>
               </ol>
               <div className="modelos-wpp">
                 {Object.entries(c.modelosWhatsApp).map(([nome, texto]) => (
@@ -172,6 +179,8 @@ export default function Notificacoes() {
           </>
         )}
       </Estado>
+
+      <AtendimentoAutomatico webhook={cfg.dados?.webhook} />
 
       <h3 className="secao-titulo">Últimas mensagens enviadas</h3>
       <Estado req={hist} vazio={<Vazio icone="📭" texto="Nenhuma mensagem automática enviada ainda." />}>
@@ -196,3 +205,155 @@ export default function Notificacoes() {
     </div>
   );
 }
+
+function duracao(min) {
+  if (min % 60 === 0) return min === 60 ? "1 hora" : `${min / 60} horas`;
+  if (min > 60) return `${Math.floor(min / 60)}h${String(min % 60).padStart(2, "0")}`;
+  return `${min} minutos`;
+}
+
+function WebhookUrl({ url }) {
+  const [ok, setOk] = React.useState(false);
+  if (!url) return <code>https://SEU-SERVIDOR/api/whatsapp/webhook</code>;
+  return (
+    <>
+      <code>{url}</code>{" "}
+      <button type="button" className="btn btn-ghost btn-sm" onClick={() => { copiar(url); setOk(true); setTimeout(() => setOk(false), 1500); }}>{ok ? "Copiado ✓" : "Copiar"}</button>
+    </>
+  );
+}
+
+/** Balão no estilo do WhatsApp: mostra exatamente o que o cliente vai ler. */
+function BalaoWhatsApp({ texto, lado = "recebida" }) {
+  const partes = String(texto || "").split(/(https?:\/\/\S+)/g);
+  return (
+    <div className={"balao-wpp " + lado}>
+      {partes.map((p, i) => /^https?:\/\//.test(p) ? <a key={i} href={p} target="_blank" rel="noreferrer">{p}</a> : <React.Fragment key={i}>{p}</React.Fragment>)}
+    </div>
+  );
+}
+
+/** Resposta automática: cliente escreve no WhatsApp da barbearia e recebe na hora o link de agendamento. */
+function AtendimentoAutomatico({ webhook: w }) {
+  const { perms } = usePainel();
+  const atend = useApi("/api/notificacoes/atendimento");
+  const conv = useApi("/api/notificacoes/atendimento/conversas");
+  const [form, setForm] = React.useState(null);
+  const [sim, setSim] = React.useState({ nome: "João", telefone: "", texto: "Oi, tem horário amanhã?" });
+  const [resposta, setResposta] = React.useState("");
+  const [executar, ocupado] = useAcao();
+  const [executarSim, simulando] = useAcao();
+
+  React.useEffect(() => { if (atend.dados) setForm(atend.dados); }, [atend.dados]);
+
+  const salvar = async (e) => {
+    e.preventDefault();
+    const r = await executar(() => api("/api/notificacoes/atendimento", { method: "PUT", body: form }), "Resposta automática salva");
+    if (r) { setForm(r); simular(); }
+  };
+  const simular = async (e) => {
+    if (e) e.preventDefault();
+    const r = await executarSim(() => api("/api/notificacoes/atendimento/simular", { method: "POST", body: { nome: sim.nome, telefone: sim.telefone } }));
+    if (r) setResposta(r.resposta);
+  };
+  React.useEffect(() => { if (atend.dados) simular(); /* previa inicial */ // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atend.dados]);
+
+  const lista = conv.dados || [];
+  const podeEditar = perms.admin;
+
+  return (
+    <section className="atendimento-auto">
+      <h3 className="secao-titulo">🤖 Resposta automática no WhatsApp</h3>
+      <p className="texto-fraco">
+        O cliente manda mensagem no WhatsApp da barbearia e recebe na hora as boas-vindas com o link pra agendar.
+        Se ele já tem horário marcado, a resposta traz o horário e o link pra ver ou cancelar, e a cartela de fidelidade dele.
+        Depois disso o sistema fica quieto e a conversa segue com a equipe, no próprio celular.
+      </p>
+      {w && (
+        <div className={"aviso-faixa " + (w.pronto ? "bom" : "aviso")}>
+          {w.pronto ? "✅ Ligado: o WhatsApp oficial está conectado e o webhook está configurado."
+            : <>⚠️ Ainda não está ligado no servidor — falta: {[!w.whatsappConfigurado && "token e número do WhatsApp", !w.verifyTokenConfigurado && "WHATSAPP_VERIFY_TOKEN", !w.appSecretConfigurado && "WHATSAPP_APP_SECRET"].filter(Boolean).join(", ")}. Veja o passo a passo acima. A mensagem já pode ser configurada e testada aqui.</>}
+        </div>
+      )}
+      <div className="atendimento-grid">
+        <Estado req={atend}>
+          {() => form && (
+            <form className="cartao" onSubmit={salvar}>
+              <h3>Mensagem de boas-vindas</h3>
+              <label className="check-linha">
+                <input type="checkbox" checked={form.respostaAutomatica} disabled={!podeEditar} onChange={(e) => setForm({ ...form, respostaAutomatica: e.target.checked })} />
+                Responder automaticamente quem mandar mensagem
+              </label>
+              <Campo label="Texto" dica="Use {nome} (primeiro nome do cliente) e {link_agendar} (link do agendamento online — obrigatório).">
+                <textarea rows={9} value={form.saudacao} disabled={!podeEditar} maxLength={1000} onChange={(e) => setForm({ ...form, saudacao: e.target.value })} />
+              </Campo>
+              <div className="form-grade">
+                <Campo label="Responder o mesmo cliente de novo depois de">
+                  <select value={form.intervaloHoras} disabled={!podeEditar} onChange={(e) => setForm({ ...form, intervaloHoras: Number(e.target.value) })}>
+                    {[1, 3, 6, 12, 24, 48, 72, 168].map((h) => <option key={h} value={h}>{h < 24 ? `${h} hora${h > 1 ? "s" : ""}` : h === 168 ? "1 semana" : `${h / 24} dia${h > 24 ? "s" : ""}`}</option>)}
+                  </select>
+                </Campo>
+                <Campo label="Cliente com horário marcado">
+                  <label className="check-linha">
+                    <input type="checkbox" checked={form.mostrarProximoHorario} disabled={!podeEditar} onChange={(e) => setForm({ ...form, mostrarProximoHorario: e.target.checked })} />
+                    mostrar o horário e a cartela fidelidade
+                  </label>
+                </Campo>
+              </div>
+              {podeEditar ? (
+                <div className="acoes-linha">
+                  <button className="btn btn-primary" disabled={ocupado}>{ocupado ? "Salvando..." : "Salvar"}</button>
+                  <button type="button" className="btn btn-ghost" onClick={() => setForm({ ...form, saudacao: TEXTO_PADRAO })}>Voltar ao texto padrão</button>
+                </div>
+              ) : <small className="texto-fraco">Só o administrador altera a mensagem.</small>}
+            </form>
+          )}
+        </Estado>
+
+        <form className="cartao simulador-wpp" onSubmit={simular}>
+          <h3>📱 Teste: como o cliente vai receber</h3>
+          <div className="form-grade">
+            <Campo label="Nome no WhatsApp"><input value={sim.nome} onChange={(e) => setSim({ ...sim, nome: e.target.value })} /></Campo>
+            <Campo label="Telefone (opcional)" dica="De um cliente cadastrado, pra ver com o horário dele"><input value={sim.telefone} onChange={(e) => setSim({ ...sim, telefone: telefone(e.target.value) })} placeholder="(31) 99999-9999" /></Campo>
+          </div>
+          <Campo label="Mensagem do cliente"><input value={sim.texto} onChange={(e) => setSim({ ...sim, texto: e.target.value })} /></Campo>
+          <button className="btn btn-ghost" disabled={simulando}>{simulando ? "Gerando..." : "Simular conversa"}</button>
+          <div className="tela-wpp">
+            {sim.texto && <BalaoWhatsApp texto={sim.texto} lado="enviada" />}
+            {resposta && <BalaoWhatsApp texto={resposta} />}
+          </div>
+          <small className="texto-fraco">A prévia usa o texto salvo. Nada é enviado.</small>
+        </form>
+      </div>
+
+      <h3 className="secao-titulo">💬 Quem mandou mensagem</h3>
+      <Estado req={conv} vazio={<Vazio icone="💬" texto="Ninguém escreveu ainda — as conversas aparecem aqui assim que o WhatsApp oficial estiver ligado." />}>
+        {() => (
+          <div className="tabela-wrap">
+            <table className="tabela">
+              <thead><tr><th>Última mensagem</th><th>Contato</th><th>Mensagem</th><th>Resposta automática</th><th></th></tr></thead>
+              <tbody>{lista.map((c) => (
+                <tr key={c.id}>
+                  <td>{dataHora(c.ultimaRecebidaEm)}<br /><small className="texto-fraco">{c.totalRecebidas} msg</small></td>
+                  <td>{c.nome || "—"}<br /><small className="texto-fraco">{telefone(c.telefone.replace(/^55/, ""))}</small>{c.clienteId && <><br /><Pill tom="bom">cliente</Pill></>}</td>
+                  <td className="celula-msg">{c.ultimaMensagem}</td>
+                  <td>{c.ultimaRespostaEm ? <><Pill tom="bom">respondida</Pill><br /><small className="texto-fraco">{dataHora(c.ultimaRespostaEm)}</small></>
+                    : c.erroResposta ? <><Pill tom="ruim">não enviada</Pill><br /><small className="texto-erro">{c.erroResposta}</small></> : <Pill>—</Pill>}</td>
+                  <td><a className="btn btn-ghost btn-sm" href={linkWhatsApp(c.telefone.replace(/^55/, ""), "")} target="_blank" rel="noreferrer">Abrir conversa</a></td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        )}
+      </Estado>
+    </section>
+  );
+}
+
+const TEXTO_PADRAO = `Olá, {nome}! 💈 Seja bem-vindo(a) à Rede Barbearias.
+
+Pra agendar seu horário é rapidinho: escolha a unidade, o barbeiro e o horário por aqui 👇
+{link_agendar}
+
+Se preferir falar com a gente, é só mandar sua mensagem que já te respondemos 😉`;
