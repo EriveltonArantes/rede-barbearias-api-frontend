@@ -32,7 +32,7 @@ function BarbeiroForm({ barbeiro, onClose, onSalvo }) {
           <Campo label="Apelido (aparece no site)"><input value={f.apelido} onChange={set("apelido")} /></Campo>
           <Campo label="Unidade">
             <select value={f.unidadeId} onChange={set("unidadeId")} disabled={!perms.admin}>
-              {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}
+              {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}
             </select>
           </Campo>
           <Campo label="Celular"><input value={f.telefone} onChange={set("telefone")} inputMode="tel" /></Campo>
@@ -73,7 +73,7 @@ function Barbeiros() {
                   <Avatar nome={b.nome} foto={b.fotoUrl} tamanho={56} />
                   <div>
                     <b>{b.nome}{b.apelido ? ` “${b.apelido}”` : ""}</b>
-                    <small className="texto-fraco">{b.unidadeNome.replace("Rede Barbearias — ", "")}</small>
+                    <small className="texto-fraco">{b.unidadeNome.replace(/^.*? — /, "")}</small>
                     {b.notaMedia ? <span><Estrelas nota={Math.round(b.notaMedia)} tamanho={12} /> {b.notaMedia} ({b.totalAvaliacoes})</span> : <small className="texto-fraco">sem avaliações</small>}
                   </div>
                   {!b.ativo && <Pill>inativo</Pill>}
@@ -132,7 +132,7 @@ function Folgas() {
         <h3>Nova folga / bloqueio</h3>
         <Grade>
           {perms.admin && (
-            <Campo label="Unidade"><select value={f.unidadeId} onChange={(e) => setF({ ...f, unidadeId: e.target.value, barbeiroId: "" })}>{unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}</select></Campo>
+            <Campo label="Unidade"><select value={f.unidadeId} onChange={(e) => setF({ ...f, unidadeId: e.target.value, barbeiroId: "" })}>{unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}</select></Campo>
           )}
           <Campo label="Quem">
             <select value={f.barbeiroId} onChange={(e) => setF({ ...f, barbeiroId: e.target.value })} disabled={perms.barbeiro}>
@@ -159,7 +159,7 @@ function Folgas() {
             <ul className="lista-simples">
               {l.map((b) => (
                 <li key={b.id}>
-                  <span><b>{b.barbeiroNome || "🏪 Unidade inteira"}</b> · {b.motivo}<br /><small className="texto-fraco">{dataHora(b.inicio)} → {dataHora(b.fim)} · {b.unidadeNome.replace("Rede Barbearias — ", "")}</small></span>
+                  <span><b>{b.barbeiroNome || "🏪 Unidade inteira"}</b> · {b.motivo}<br /><small className="texto-fraco">{dataHora(b.inicio)} → {dataHora(b.fim)} · {b.unidadeNome.replace(/^.*? — /, "")}</small></span>
                   {(!perms.barbeiro || b.barbeiroId === sessao.barbeiroId) && <button className="btn-icone" title="Remover" onClick={() => excluir(b)}>🗑️</button>}
                 </li>
               ))}

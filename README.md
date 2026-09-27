@@ -20,6 +20,10 @@ React 18 · Vite · CSS próprio (gráficos em SVG, sem biblioteca) · Vitest + 
   - Financeiro: resultado (DRE), caixa do dia imprimível, comissões exportáveis, despesas recorrentes.
   - Clube de assinatura, marketing (campanhas por WhatsApp + cupons), avaliações, equipe e folgas, unidades e serviços, usuários e auditoria, notificações automáticas (lembrete no dia e 1h antes, com botões Confirmo/Preciso cancelar) e atendimento automático no WhatsApp (boas-vindas, aviso fora do horário, PARAR/VOLTAR) com simulador da conversa. A página "meu horário" permite confirmar presença e pagar o sinal por Pix. Agendamento online com lista de espera (link do aviso já abre no dia certo), consentimento de promoções e política de privacidade (`#/privacidade`). Painel com "Sinais e espera" (recepção confere Pix, devolve sinal, vê a fila) e "Regras e automações"; área do cliente com baixar/excluir meus dados (LGPD).
 - **Área do cliente**: meus horários, agendar, fidelidade e clube, meus dados.
+- **Esqueci minha senha**: login por usuário, celular ou e-mail; código de 6 números no WhatsApp/e-mail; a recepção vê quem pediu e manda o código pelo WhatsApp em 1 clique.
+- **Marca e aparência** (admin): nome, logo, cores (com paletas prontas e prévia ao vivo) e contatos — site, painel e app mudam juntos, sem rebuild.
+- **App no celular (PWA)**: convite "Instalar" no Android/Chrome, passo a passo no iPhone, ícone e nome da barbearia, service worker (abre sem sinal).
+- **Saúde do sistema** (admin): semáforo de verificações, banco, canais, rotinas automáticas, backup (baixar/enviar agora) e últimos alertas.
 
 Responsivo (menu lateral vira gaveta no celular).
 

@@ -1,4 +1,5 @@
 import React from "react";
+import { marcaAtual } from "../marca.jsx";
 import { qs } from "../api.js";
 import { usePainel } from "../contexto.js";
 import { BarrasH, Colunas, Estado, Estrelas, GraficoArea, Kpi, StatusPill, Vazio, useApi } from "../ui.jsx";
@@ -123,7 +124,7 @@ export default function Dashboard() {
                       <li key={c.id}>
                         <span>{c.hoje ? "🎉 " : ""}<b>dia {c.dia}</b> · {c.nome}</span>
                         <a target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm"
-                           href={linkWhatsApp(c.telefone, `Feliz aniversário, ${primeiroNome(c.nome)}! 🎉 A Rede Barbearias te deu um presente: 15% de desconto no próximo corte com o cupom NIVER15. 💈`)}>💬</a>
+                           href={linkWhatsApp(c.telefone, `Feliz aniversário, ${primeiroNome(c.nome)}! 🎉 A ${marcaAtual().nome} te deu um presente: 15% de desconto no próximo corte com o cupom NIVER15. 💈`)}>💬</a>
                       </li>
                     ))}
                   </ul>

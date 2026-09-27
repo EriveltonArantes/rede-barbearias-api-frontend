@@ -1,4 +1,5 @@
 import React from "react";
+import { marcaAtual } from "../marca.jsx";
 import { api, qs } from "../api.js";
 import { usePainel } from "../contexto.js";
 import {
@@ -34,7 +35,7 @@ function ClienteForm({ cliente, onClose, onSalvo }) {
           <Campo label="Unidade preferida">
             <select value={f.unidadePreferidaId} onChange={(e) => setF({ ...f, unidadePreferidaId: e.target.value })}>
               <option value="">—</option>
-              {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}
+              {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}
             </select>
           </Campo>
           <Campo label="Preferências / observações" largo>
@@ -76,7 +77,7 @@ export function FichaCliente({ id, onClose, onEditar }) {
                   {c.observacoes && <p className="nota-obs">📝 {c.observacoes}</p>}
                 </div>
                 <div className="acoes-linha">
-                  <a className="btn btn-ghost btn-sm" target="_blank" rel="noreferrer" href={linkWhatsApp(c.telefone, `Olá, ${primeiroNome(c.nome)}! Aqui é da Rede Barbearias 💈`)}>💬 WhatsApp</a>
+                  <a className="btn btn-ghost btn-sm" target="_blank" rel="noreferrer" href={linkWhatsApp(c.telefone, `Olá, ${primeiroNome(c.nome)}! Aqui é da ${marcaAtual().nome} 💈`)}>💬 WhatsApp</a>
                   {onEditar && <button className="btn btn-ghost btn-sm" onClick={() => onEditar(c)}>✏️ Editar</button>}
                   <button className="btn btn-primary btn-sm" onClick={() => setAgendar(true)}>+ Agendar</button>
                   {perms?.gestao && !c.nome.startsWith("Cliente removido") && <button className="btn btn-ghost btn-sm" title="LGPD: dados que a barbearia guarda sobre o cliente" onClick={() => baixarDados(c)}>🔒 Dados</button>}

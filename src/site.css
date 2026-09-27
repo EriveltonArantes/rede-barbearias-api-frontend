@@ -1,5 +1,5 @@
 /* Site institucional (tema barbearia: preto, vermelho e dourado) */
-.site-institucional { --site-preto: #0d0b0a; --site-preto2: #1c1613; --site-vermelho: #c0392b; --site-vermelho-escuro: #7a1f1f; --site-dourado: #d4af37; --site-dourado-claro: #f0d78c; --site-escura: #1c1613; --site-texto: #2a2118; --site-texto-dim: #6b5f52; --site-bg-alt: #f2ead9; --site-borda: #e6ddc9; font-family: 'Inter', sans-serif; color: var(--site-texto); background: #fffdf8; overflow-x: hidden; }
+.site-institucional { --site-preto: #0d0b0a; --site-preto2: #1c1613; --site-vermelho: var(--marca-2, #c0392b); --site-vermelho-escuro: var(--marca-2-escuro, #7a1f1f); --site-dourado: var(--marca-1, #d4af37); --site-dourado-claro: var(--marca-1-claro, #f0d78c); --site-escura: #1c1613; --site-texto: #2a2118; --site-texto-dim: #6b5f52; --site-bg-alt: #f2ead9; --site-borda: #e6ddc9; font-family: 'Inter', sans-serif; color: var(--site-texto); background: #fffdf8; overflow-x: hidden; }
 .site-institucional h1, .site-institucional h2, .site-institucional h3, .site-institucional h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: .02em; color: var(--site-escura); }
 .site-institucional a { text-decoration: none; }
 .site-institucional .container { max-width: 1140px; }
@@ -162,3 +162,5 @@
   .site-bb-mascote { font-size: 6rem; }
 }
 
+.site-footer-redes { display: flex; gap: 14px; flex-wrap: wrap; }
+.site-brand .marca-logo-img { background: rgba(255,255,255,.04); }

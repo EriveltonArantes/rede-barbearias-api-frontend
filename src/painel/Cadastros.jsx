@@ -1,4 +1,5 @@
 import React from "react";
+import { marcaAtual } from "../marca.jsx";
 import { api } from "../api.js";
 import { usePainel } from "../contexto.js";
 import { Abas, Cabecalho, Campo, Estado, Grade, Modal, Pill, SeletorDias, Upload, Vazio, useAcao, useApi, useConfirmar } from "../ui.jsx";
@@ -6,7 +7,7 @@ import { CATEGORIAS_SERVICO, diasLegiveis, moeda, telefone } from "../util.js";
 
 function UnidadeForm({ unidade, onClose, onSalvo }) {
   const [f, setF] = React.useState({
-    nome: unidade?.nome || "Rede Barbearias — ", endereco: unidade?.endereco || "", bairro: unidade?.bairro || "", cidade: unidade?.cidade || "",
+    nome: unidade?.nome || marcaAtual().nome + " — ", endereco: unidade?.endereco || "", bairro: unidade?.bairro || "", cidade: unidade?.cidade || "",
     telefone: unidade?.telefone || "", whatsapp: telefone(unidade?.whatsapp || ""), email: unidade?.email || "", fotoUrl: unidade?.fotoUrl || "",
     horaAbertura: unidade?.horaAbertura?.slice(0, 5) || "09:00", horaFechamento: unidade?.horaFechamento?.slice(0, 5) || "20:00",
     diasFuncionamento: unidade?.diasFuncionamento || "1,2,3,4,5,6", chavePix: unidade?.chavePix || "", ativa: unidade?.ativa ?? true,
@@ -96,7 +97,7 @@ export default function Cadastros() {
             <div className="cartoes-grid">
               {l.map((u) => (
                 <div key={u.id} className={"cartao" + (u.ativa ? "" : " inativo")}>
-                  <h3>🏪 {u.nome.replace("Rede Barbearias — ", "")} {!u.ativa && <Pill>inativa</Pill>}</h3>
+                  <h3>🏪 {u.nome.replace(/^.*? — /, "")} {!u.ativa && <Pill>inativa</Pill>}</h3>
                   <p>📍 {u.endereco} — {u.bairro}, {u.cidade}</p>
                   <p>🕐 {diasLegiveis(u.diasFuncionamento)} · {u.horaAbertura.slice(0, 5)}–{u.horaFechamento.slice(0, 5)}</p>
                   <p>📞 {u.telefone}{u.whatsapp ? ` · 💬 ${telefone(u.whatsapp)}` : ""}</p>

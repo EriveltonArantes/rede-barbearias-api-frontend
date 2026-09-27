@@ -70,7 +70,7 @@ export default function Agendamentos() {
                       <td><b>{dataBR(a.inicio)}</b> {hora(a.inicio)}</td>
                       <td>{a.clienteNome}<br /><small className="texto-fraco">{telefone(a.clienteTelefone)}</small></td>
                       <td>{a.servicoNome}{a.cupomCodigo && <small className="texto-fraco"> · 🏷️{a.cupomCodigo}</small>}</td>
-                      <td>{a.barbeiroNome}{!unidadeId && unidades.length > 1 && <><br /><small className="texto-fraco">{a.unidadeNome.replace("Rede Barbearias — ", "")}</small></>}</td>
+                      <td>{a.barbeiroNome}{!unidadeId && unidades.length > 1 && <><br /><small className="texto-fraco">{a.unidadeNome.replace(/^.*? — /, "")}</small></>}</td>
                       <td><StatusPill status={a.status} /></td>
                       <td className="num">{a.pago ? <>{moeda(a.valorFinal)}<br /><small className="texto-fraco">{FORMAS[a.formaPagamento]}</small></> : moeda(a.valorAPagar)}</td>
                       <td>{ORIGENS[a.origem]}</td>

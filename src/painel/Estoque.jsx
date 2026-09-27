@@ -31,7 +31,7 @@ function ProdutoForm({ produto, unidadeId, onClose, onSalvo }) {
           <Campo label="Nome" largo><input value={f.nome} onChange={set("nome")} required /></Campo>
           <Campo label="Unidade">
             <select value={f.unidadeId} onChange={set("unidadeId")} disabled={!!produto} required>
-              {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}
+              {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}
             </select>
           </Campo>
           <Campo label="Marca"><input value={f.marca} onChange={set("marca")} /></Campo>
@@ -131,7 +131,7 @@ export default function Estoque() {
               <tbody>{lista.map((p) => (
                 <tr key={p.id} className={p.ativo ? "" : "inativo"}>
                   <td className="celula-produto">{p.fotoUrl ? <img src={urlArquivo(p.fotoUrl)} alt="" /> : <span>🧴</span>}<div><b>{p.nome}</b><small className="texto-fraco">{p.marca}{p.codigoBarras ? " · " + p.codigoBarras : ""}</small></div></td>
-                  <td>{p.unidadeNome.replace("Rede Barbearias — ", "")}</td>
+                  <td>{p.unidadeNome.replace(/^.*? — /, "")}</td>
                   <td className="num">{moeda(p.precoCusto)}</td><td className="num">{moeda(p.precoVenda)}</td>
                   <td className="num">{p.margemPercentual != null ? p.margemPercentual + "%" : "—"}</td>
                   <td className="num">{p.estoqueBaixo && p.ativo ? <Pill tom="ruim">⚠️ {p.estoque}</Pill> : <b>{p.estoque}</b>} <small className="texto-fraco">/ mín {p.estoqueMinimo}</small></td>

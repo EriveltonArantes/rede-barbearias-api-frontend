@@ -47,7 +47,7 @@ function Fila() {
     if (await executar(() => api(`/api/lista-espera/${e.id}?status=${status}`, { method: "PATCH" }), ok)) req.recarregar();
   };
   const avisarWhats = (e) => {
-    const msg = `Olá, ${primeiroNome(e.clienteNome)}! Aqui é da ${e.unidadeNome.replace("Rede Barbearias — ", "Rede Barbearias ")} 💈 Você estava na lista de espera de ${dataExtenso(e.data)} — abriu um horário! Agende aqui: ${window.location.origin}/#/agendar?unidade=${e.unidadeId}&servico=${e.servicoId}&data=${e.data}`;
+    const msg = `Olá, ${primeiroNome(e.clienteNome)}! Aqui é da ${e.unidadeNome.replace(" — ", " ")} 💈 Você estava na lista de espera de ${dataExtenso(e.data)} — abriu um horário! Agende aqui: ${window.location.origin}/#/agendar?unidade=${e.unidadeId}&servico=${e.servicoId}&data=${e.data}`;
     window.open(linkWhatsApp(e.clienteTelefone, msg), "_blank", "noopener");
     mudar(e, "AVISADO");
   };
@@ -70,7 +70,7 @@ function Fila() {
                   <tr key={e.id}>
                     <td>{dataExtenso(e.data)}<br /><small className="texto-fraco">{PERIODOS_ESPERA[e.periodo]}</small></td>
                     <td>{e.clienteNome}<br /><small className="texto-fraco">{telefone(e.clienteTelefone)} · na fila desde {dataHora(e.criadoEm)}</small></td>
-                    <td>{e.servicoNome}{e.barbeiroNome ? <> com {e.barbeiroNome.split(" ")[0]}</> : ""}<br /><small className="texto-fraco">{e.unidadeNome.replace("Rede Barbearias — ", "")}</small></td>
+                    <td>{e.servicoNome}{e.barbeiroNome ? <> com {e.barbeiroNome.split(" ")[0]}</> : ""}<br /><small className="texto-fraco">{e.unidadeNome.replace(/^.*? — /, "")}</small></td>
                     <td><Pill tom={e.status === "AVISADO" ? "aviso" : e.status === "AGENDOU" ? "bom" : "neutro"}>{e.status.toLowerCase()}</Pill>
                       {e.avisos > 0 && <><br /><small className="texto-fraco">avisado {e.avisos}x · {dataHora(e.avisadoEm)}</small></>}</td>
                     <td className="acoes-celula">

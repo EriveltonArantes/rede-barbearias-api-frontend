@@ -1,4 +1,5 @@
 import React from "react";
+import { marcaAtual } from "./marca.jsx";
 import { api, urlArquivo, enviarArquivo } from "./api.js";
 import { iniciais, moeda, STATUS, mensagemErro } from "./util.js";
 
@@ -263,7 +264,7 @@ export function PixCobranca({ valor, unidadeId, referencia }) {
   React.useEffect(() => {
     if (!valor || Number(valor) <= 0) return;
     setPix(null); setErro("");
-    api("/api/pix/gerar", { method: "POST", body: { valor, unidadeId, referencia, descricao: "Rede Barbearias" } })
+    api("/api/pix/gerar", { method: "POST", body: { valor, unidadeId, referencia, descricao: marcaAtual().nome } })
       .then(setPix).catch((e) => setErro(e.message));
   }, [valor, unidadeId, referencia]);
   if (!valor || Number(valor) <= 0) return null;

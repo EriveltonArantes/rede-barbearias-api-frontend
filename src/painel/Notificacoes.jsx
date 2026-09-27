@@ -53,7 +53,7 @@ export function LembretesDia({ unidadeId, data, onClose }) {
   const pendentes = abertos.filter((a) => !a.lembreteEnviado && !marcados[a.id]);
   const enviarManual = async (a) => {
     const quando = data === hojeISO() ? "hoje" : dataExtenso(data);
-    const msg = `Olá, ${primeiroNome(a.clienteNome)}! Passando pra lembrar do seu horário ${quando} às ${hora(a.inicio)} com ${a.barbeiroNome.split(" ")[0]} (${a.servicoNome}) na ${a.unidadeNome.replace("Rede Barbearias — ", "Rede Barbearias ")}. Se precisar remarcar, é só responder aqui. Código: ${a.codigo} 💈`;
+    const msg = `Olá, ${primeiroNome(a.clienteNome)}! Passando pra lembrar do seu horário ${quando} às ${hora(a.inicio)} com ${a.barbeiroNome.split(" ")[0]} (${a.servicoNome}) na ${a.unidadeNome.replace(" — ", " ")}. Se precisar remarcar, é só responder aqui. Código: ${a.codigo} 💈`;
     window.open(linkWhatsApp(a.clienteTelefone, msg), "_blank", "noopener");
     setMarcados((m) => ({ ...m, [a.id]: true }));
     await executar(() => api(`/api/agendamentos/${a.id}/lembrete`, { method: "PATCH" }));
@@ -295,7 +295,7 @@ function AtendimentoAutomatico({ webhook: w }) {
                 <input type="checkbox" checked={form.respostaAutomatica} disabled={!podeEditar} onChange={(e) => setForm({ ...form, respostaAutomatica: e.target.checked })} />
                 Responder automaticamente quem mandar mensagem
               </label>
-              <Campo label="Texto" dica="Use {nome} (primeiro nome do cliente) e {link_agendar} (link do agendamento online — obrigatório).">
+              <Campo label="Texto" dica="Use {nome} (primeiro nome do cliente), {marca} (nome da barbearia) e {link_agendar} (link do agendamento online — obrigatório).">
                 <textarea rows={9} value={form.saudacao} disabled={!podeEditar} maxLength={1000} onChange={(e) => setForm({ ...form, saudacao: e.target.value })} />
               </Campo>
               <label className="check-linha">
@@ -384,7 +384,7 @@ function AtendimentoAutomatico({ webhook: w }) {
   );
 }
 
-const TEXTO_PADRAO = `Olá, {nome}! 💈 Seja bem-vindo(a) à Rede Barbearias.
+const TEXTO_PADRAO = `Olá, {nome}! 💈 Seja bem-vindo(a) à {marca}.
 
 Pra agendar seu horário é rapidinho: escolha a unidade, o barbeiro e o horário por aqui 👇
 {link_agendar}

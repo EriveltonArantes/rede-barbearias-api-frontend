@@ -2,6 +2,7 @@ import React from "react";
 import { Avatar, Estrelas, useApi } from "../ui.jsx";
 import { CATEGORIAS_SERVICO, diasLegiveis, linkWhatsApp, moeda, telefone } from "../util.js";
 import AgendarOnline from "./AgendarOnline.jsx";
+import { Logo, useMarca } from "../marca.jsx";
 import Privacidade from "./Privacidade.jsx";
 import MeuHorario from "./MeuHorario.jsx";
 
@@ -23,7 +24,7 @@ function Navegacao({ irPara, onEntrar }) {
   return (
     <nav className="site-nav navbar navbar-expand-lg sticky-top">
       <div className="container">
-        <a className="site-brand" href="#/" onClick={(e) => { e.preventDefault(); ir("topo"); }}>💈 Rede Barbearias<span className="site-brand-dot">.</span></a>
+        <a className="site-brand" href="#/" onClick={(e) => { e.preventDefault(); ir("topo"); }}><Logo pontoClasse="site-brand-dot" /></a>
         <button className="navbar-toggler site-toggler" type="button" onClick={() => setAberto((m) => !m)} aria-label="Abrir menu" aria-expanded={aberto}>
           <span className="navbar-toggler-icon"></span>
         </button>
@@ -44,19 +45,26 @@ function Navegacao({ irPara, onEntrar }) {
 
 function Rodape({ unidades, onEntrar }) {
   const principal = unidades?.[0];
+  const marca = useMarca();
   return (
     <footer id="contato" className="site-footer">
       <div className="container">
         <div className="site-footer-grid">
           <div>
-            <div className="site-brand site-footer-brand">💈 Rede Barbearias<span className="site-brand-dot">.</span></div>
-            <p className="site-footer-texto">Estilo e navalha em cada unidade. Agende online a qualquer hora.</p>
+            <div className="site-brand site-footer-brand"><Logo pontoClasse="site-brand-dot" /></div>
+            <p className="site-footer-texto">{marca.sobre || marca.slogan || "Estilo e navalha em cada unidade. Agende online a qualquer hora."}</p>
+            {(marca.instagram || marca.whatsapp) && (
+              <p className="site-footer-redes">
+                {marca.instagram && <a className="site-link-claro" target="_blank" rel="noreferrer" href={"https://instagram.com/" + marca.instagram}>📸 @{marca.instagram}</a>}
+                {marca.whatsapp && <a className="site-link-claro" target="_blank" rel="noreferrer" href={linkWhatsApp(marca.whatsapp, "Olá! Vim pelo site.")}>💬 WhatsApp</a>}
+              </p>
+            )}
             <a className="site-btn-entrar" href="#/agendar">📅 Agendar horário</a>
           </div>
           <div>
             <h4>Unidades</h4>
-            {(unidades || []).map((u) => <p key={u.id}>📍 {u.nome.replace("Rede Barbearias — ", "")} · {u.telefone}</p>)}
-            {principal?.email && <p>✉️ {principal.email}</p>}
+            {(unidades || []).map((u) => <p key={u.id}>📍 {u.nome.replace(/^.*? — /, "")} · {u.telefone}</p>)}
+            {(marca.email || principal?.email) && <p>✉️ {marca.email || principal.email}</p>}
           </div>
           <div>
             <h4>Acesso</h4>
@@ -67,7 +75,7 @@ function Rodape({ unidades, onEntrar }) {
           </div>
         </div>
         <hr className="site-footer-linha" />
-        <p className="site-footer-copyright">© {new Date().getFullYear()} Rede Barbearias — Todos os direitos reservados.</p>
+        <p className="site-footer-copyright">© {new Date().getFullYear()} {marca.nome} — Todos os direitos reservados.</p>
       </div>
     </footer>
   );
@@ -76,13 +84,14 @@ function Rodape({ unidades, onEntrar }) {
 /** Página interna do site (agendar / meu horário) com o mesmo cabeçalho e rodapé. */
 export function PaginaSite({ titulo, sub, onEntrar, children }) {
   const unidades = useApi("/api/publico/unidades");
+  const marca = useMarca();
   React.useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
     <div className="site-institucional">
       <Navegacao irPara={(id) => { window.location.hash = "#/"; setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 80); }} onEntrar={onEntrar} />
       <section className="site-pagina">
         <div className="container">
-          <span className="site-eyebrow">Rede Barbearias</span>
+          <span className="site-eyebrow">{marca.nome}</span>
           <h1 className="site-section-titulo">{titulo}</h1>
           {sub && <p className="site-section-texto">{sub}</p>}
           <div className="site-pagina-card">{children}</div>
@@ -124,6 +133,7 @@ export default function Site({ onEntrar }) {
   const barbeiros = useApi("/api/publico/barbeiros");
   const planos = useApi("/api/publico/planos");
   const avaliacoes = useApi("/api/publico/avaliacoes");
+  const marca = useMarca();
   const [unidadeMapa, setUnidadeMapa] = React.useState(0);
 
   React.useEffect(() => {
@@ -158,7 +168,7 @@ export default function Site({ onEntrar }) {
         <span className="site-bb-blob site-bb-blob-c" aria-hidden="true"></span>
         <div className="container site-bb-hero-inner">
           <div className="site-bb-hero-texto">
-            <span className="site-bb-badge">💈 {listaUnidades.length || 3} unidades em Belo Horizonte</span>
+            <span className="site-bb-badge">{marca.emoji || "💈"} {listaUnidades.length > 1 ? `${listaUnidades.length} unidades${marca.cidade ? " em " + marca.cidade : ""}` : marca.cidade || marca.nome}</span>
             <h1 className="site-bb-hero-titulo">Onde todo <span className="site-bb-destaque">corte</span> vira uma experiência de respeito</h1>
             <p className="site-bb-hero-sub">Barbeiros de mão cheia, horário marcado sem fila e um clube que deixa seu cabelo sempre na régua. Agende online em menos de um minuto.</p>
             <div className="site-bb-hero-cta">
@@ -255,7 +265,7 @@ export default function Site({ onEntrar }) {
                 <Avatar nome={b.nome} foto={b.fotoUrl} tamanho={84} />
                 <b>{b.nome}{b.apelido ? ` “${b.apelido}”` : ""}</b>
                 <span className="site-barbeiro-esp">{b.especialidades}</span>
-                <span className="site-barbeiro-un">📍 {b.unidadeNome.replace("Rede Barbearias — ", "")}</span>
+                <span className="site-barbeiro-un">📍 {b.unidadeNome.replace(/^.*? — /, "")}</span>
                 {b.notaMedia && <span><Estrelas nota={Math.round(b.notaMedia)} tamanho={14} /> {b.notaMedia.toFixed(1)}</span>}
                 {b.bio && <p>{b.bio}</p>}
               </a>
@@ -332,7 +342,7 @@ export default function Site({ onEntrar }) {
             <div className="site-unidades-lista">
               {listaUnidades.map((u, i) => (
                 <button key={u.id} className={"site-unidade" + (i === unidadeMapa ? " sel" : "")} onClick={() => setUnidadeMapa(i)}>
-                  <b>{u.nome.replace("Rede Barbearias — ", "")}</b>
+                  <b>{u.nome.replace(/^.*? — /, "")}</b>
                   <span>📍 {u.endereco} — {u.bairro}</span>
                   <span>🕐 {diasLegiveis(u.diasFuncionamento)} · {u.horaAbertura.slice(0, 5)} às {u.horaFechamento.slice(0, 5)}</span>
                   <span>📞 {u.telefone}{u.whatsapp ? " · 💬 " + telefone(u.whatsapp) : ""}</span>

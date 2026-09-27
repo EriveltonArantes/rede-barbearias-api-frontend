@@ -68,7 +68,7 @@ export default function Vendas() {
       <Cabecalho titulo="Vender produto" sub="Busque pelo nome ou passe o leitor de código de barras">
         {perms.admin && !unidadeId && (
           <select value={un} onChange={(e) => { setUnLocal(e.target.value); setCarrinho([]); }} aria-label="Unidade">
-            {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}
+            {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}
           </select>
         )}
       </Cabecalho>

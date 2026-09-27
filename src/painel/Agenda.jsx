@@ -252,7 +252,7 @@ export function DetalheAgendamento({ ag: inicial, onClose, onMudou, unidadeId })
       <dl className="detalhe">
         <dt>Quando</dt><dd>{dataExtenso(ag.inicio.slice(0, 10))}, {hora(ag.inicio)}–{hora(ag.fim)}</dd>
         <dt>Serviço</dt><dd>{ag.servicoNome} ({ag.duracaoMinutos} min)</dd>
-        <dt>Barbeiro</dt><dd>{ag.barbeiroNome} · {ag.unidadeNome.replace("Rede Barbearias — ", "")}</dd>
+        <dt>Barbeiro</dt><dd>{ag.barbeiroNome} · {ag.unidadeNome.replace(/^.*? — /, "")}</dd>
         <dt>Cliente</dt><dd>{ag.clienteNome} · {telefone(ag.clienteTelefone)}</dd>
         <dt>Valor</dt><dd>{moeda(ag.valorAPagar)}{Number(ag.desconto) > 0 && <small className="texto-fraco"> (tabela {moeda(ag.valor)}, desconto {moeda(ag.desconto)})</small>}</dd>
         {ag.pago && <><dt>Pago</dt><dd>{moeda(ag.valorFinal)} · {FORMAS[ag.formaPagamento]} · comissão {moeda(ag.comissaoValor)}</dd></>}
@@ -341,7 +341,7 @@ export default function Agenda() {
         <div className="agenda-nav">
           {perms.admin && !unidadeId && (
             <select value={un} onChange={(e) => setUnidadeLocal(e.target.value)} aria-label="Unidade da agenda">
-              {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}
+              {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}
             </select>
           )}
           <span className="agenda-resumo">{lista.length} horários · {moeda(totalDia)}{cancelados ? ` · ${cancelados} cancelado(s)` : ""}</span>

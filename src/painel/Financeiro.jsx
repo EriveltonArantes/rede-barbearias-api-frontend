@@ -82,7 +82,7 @@ function Resumo({ unidadeId }) {
                 <table className="tabela">
                   <thead><tr><th>Unidade</th><th className="num">Atendimentos</th><th className="num">Receita</th><th className="num">Despesas</th><th className="num">Receita − despesas</th></tr></thead>
                   <tbody>{r.porUnidade.map((u) => (
-                    <tr key={u.unidadeId}><td>{u.unidadeNome.replace("Rede Barbearias — ", "")}</td><td className="num">{u.atendimentos}</td><td className="num">{moeda(u.receita)}</td><td className="num">{moeda(u.despesas)}</td><td className="num"><b>{moeda(u.receita - u.despesas)}</b></td></tr>
+                    <tr key={u.unidadeId}><td>{u.unidadeNome.replace(/^.*? — /, "")}</td><td className="num">{u.atendimentos}</td><td className="num">{moeda(u.receita)}</td><td className="num">{moeda(u.despesas)}</td><td className="num"><b>{moeda(u.receita - u.despesas)}</b></td></tr>
                   ))}</tbody>
                 </table>
               </div>
@@ -117,7 +117,7 @@ function Caixa({ unidadeId }) {
                 <table className="tabela">
                   <thead><tr><th>Hora</th><th>Tipo</th><th>Descrição</th><th>Forma</th><th className="num">Valor</th></tr></thead>
                   <tbody>{c.lancamentos.map((l, i) => (
-                    <tr key={i}><td>{hora(l.dataHora)}</td><td><Pill>{l.tipo}</Pill></td><td>{l.descricao}{!unidadeId && <small className="texto-fraco"> · {l.unidade.replace("Rede Barbearias — ", "")}</small>}</td><td>{FORMAS[l.formaPagamento]}</td><td className="num">{moeda(l.valor)}</td></tr>
+                    <tr key={i}><td>{hora(l.dataHora)}</td><td><Pill>{l.tipo}</Pill></td><td>{l.descricao}{!unidadeId && <small className="texto-fraco"> · {l.unidade.replace(/^.*? — /, "")}</small>}</td><td>{FORMAS[l.formaPagamento]}</td><td className="num">{moeda(l.valor)}</td></tr>
                   ))}</tbody>
                 </table>
               </div>
@@ -154,7 +154,7 @@ function Comissoes({ unidadeId }) {
                 <thead><tr><th>Barbeiro</th><th className="num">Atend.</th><th className="num">Faturou (serviços)</th><th className="num">Comissão serviços</th><th className="num">Produtos</th><th className="num">Comissão produtos</th><th className="num">Total a pagar</th></tr></thead>
                 <tbody>{l.map((x) => (
                   <tr key={x.barbeiroId}>
-                    <td><b>{x.barbeiroNome}</b><br /><small className="texto-fraco">{x.unidadeNome.replace("Rede Barbearias — ", "")} · {x.percentualServico}% / {x.percentualProduto}%</small></td>
+                    <td><b>{x.barbeiroNome}</b><br /><small className="texto-fraco">{x.unidadeNome.replace(/^.*? — /, "")} · {x.percentualServico}% / {x.percentualProduto}%</small></td>
                     <td className="num">{x.atendimentos}{x.atendimentosClube ? <small className="texto-fraco"><br />{x.atendimentosClube} clube</small> : ""}</td>
                     <td className="num">{moeda(x.faturamentoServicos)}</td><td className="num">{moeda(x.comissaoServicos)}</td>
                     <td className="num">{moeda(x.faturamentoProdutos)}</td><td className="num">{moeda(x.comissaoProdutos)}</td>
@@ -203,7 +203,7 @@ function DespesaForm({ despesa, unidadeId, onClose, onSalvo }) {
       <form id="f-desp" onSubmit={salvar}>
         <Grade>
           <Campo label="Descrição" largo><input value={f.descricao} onChange={set("descricao")} required /></Campo>
-          <Campo label="Unidade"><select value={f.unidadeId} onChange={set("unidadeId")}>{unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}</select></Campo>
+          <Campo label="Unidade"><select value={f.unidadeId} onChange={set("unidadeId")}>{unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}</select></Campo>
           <Campo label="Categoria"><select value={f.categoria} onChange={set("categoria")}>{Object.entries(CATEGORIAS_DESPESA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Campo>
           <Campo label="Valor (R$)"><input type="number" step="0.01" min="0.01" value={f.valor} onChange={set("valor")} required /></Campo>
           <Campo label="Vencimento"><input type="date" value={f.vencimento} onChange={set("vencimento")} required /></Campo>
@@ -252,7 +252,7 @@ function Despesas({ unidadeId }) {
               <tbody>{l.map((d) => (
                 <tr key={d.id}>
                   <td>{dataBR(d.vencimento)}</td><td>{d.descricao}{d.fornecedor && <small className="texto-fraco"><br />{d.fornecedor}</small>}</td>
-                  <td>{CATEGORIAS_DESPESA[d.categoria]}</td><td>{d.unidadeNome.replace("Rede Barbearias — ", "")}</td><td className="num">{moeda(d.valor)}</td>
+                  <td>{CATEGORIAS_DESPESA[d.categoria]}</td><td>{d.unidadeNome.replace(/^.*? — /, "")}</td><td className="num">{moeda(d.valor)}</td>
                   <td>{d.paga ? <Pill tom="bom">✓ paga {d.pagaEm ? dataBR(d.pagaEm) : ""}</Pill> : d.vencida ? <Pill tom="ruim">vencida</Pill> : <Pill tom="aviso">a pagar</Pill>}</td>
                   <td className="acoes-celula">
                     {!d.paga && <button className="btn btn-ghost btn-sm" onClick={() => pagar(d)}>Pagar</button>}

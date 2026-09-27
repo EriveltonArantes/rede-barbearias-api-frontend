@@ -12,7 +12,7 @@ describe('Login', () => {
   test('mostra contas demo e o erro do servidor', async () => {
     render(<Login onLogin={() => {}} onVoltar={() => {}} />);
     expect(screen.getByText('Contas de demonstração')).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText('Usuário'), { target: { value: 'x' } });
+    fireEvent.change(screen.getByPlaceholderText('Usuário, celular ou e-mail'), { target: { value: 'x' } });
     fireEvent.change(screen.getByPlaceholderText('Senha'), { target: { value: 'y' } });
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
     await waitFor(() => expect(screen.getByText('Usuário ou senha inválidos.')).toBeInTheDocument());

@@ -3,6 +3,7 @@ import { api, qs } from "../api.js";
 import { usePainel } from "../contexto.js";
 import { Abas, Cabecalho, Campo, Estado, Grade, Modal, Pill, Vazio, useAcao, useApi, useConfirmar, useTabela } from "../ui.jsx";
 import { dataHora, PAPEIS, telefone } from "../util.js";
+import PedidosSenha, { CodigoGerado } from "./CodigoSenha.jsx";
 
 function UsuarioForm({ usuario, onClose, onSalvo }) {
   const { unidades, perms, sessao } = usePainel();
@@ -10,6 +11,7 @@ function UsuarioForm({ usuario, onClose, onSalvo }) {
   const [f, setF] = React.useState({
     username: usuario?.username || "", password: "", nome: usuario?.nome || "", papel: usuario?.papel || (perms.admin ? "RECEPCAO" : "RECEPCAO"),
     unidadeId: usuario?.unidadeId || sessao.unidadeId || "", barbeiroId: usuario?.barbeiroId || "", clienteId: usuario?.clienteId || "", ativo: usuario?.ativo ?? true,
+    email: usuario?.email || "", telefone: telefone(usuario?.telefone || ""),
   });
   const [buscaCli, setBuscaCli] = React.useState(usuario?.clienteNome || "");
   const [sugestoes, setSugestoes] = React.useState([]);
@@ -23,11 +25,12 @@ function UsuarioForm({ usuario, onClose, onSalvo }) {
   const salvar = async (e) => {
     e.preventDefault();
     const corpo = { ...f, password: f.password || null, unidadeId: f.unidadeId ? Number(f.unidadeId) : null,
-      barbeiroId: f.barbeiroId ? Number(f.barbeiroId) : null, clienteId: f.clienteId ? Number(f.clienteId) : null };
+      barbeiroId: f.barbeiroId ? Number(f.barbeiroId) : null, clienteId: f.clienteId ? Number(f.clienteId) : null,
+      email: f.email || null, telefone: f.telefone || null };
     const r = await executar(() => api(usuario ? "/api/usuarios/" + usuario.id : "/api/usuarios", { method: usuario ? "PUT" : "POST", body: corpo }), "Usuário salvo");
     if (r) onSalvo();
   };
-  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const set = (k) => (e) => setF({ ...f, [k]: k === "telefone" ? telefone(e.target.value) : e.target.value });
   return (
     <Modal titulo={usuario ? "Editar usuário" : "Novo usuário"} onClose={onClose}
            rodape={<><button className="btn btn-ghost" onClick={onClose}>Cancelar</button><button className="btn btn-primary" form="f-user" disabled={ocupado}>Salvar</button></>}>
@@ -36,14 +39,16 @@ function UsuarioForm({ usuario, onClose, onSalvo }) {
           <Campo label="Usuário (login)"><input value={f.username} onChange={set("username")} required autoComplete="off" /></Campo>
           <Campo label={usuario ? "Nova senha (vazio = manter)" : "Senha"}><input type="password" value={f.password} onChange={set("password")} minLength={6} required={!usuario} autoComplete="new-password" /></Campo>
           <Campo label="Nome"><input value={f.nome} onChange={set("nome")} /></Campo>
+          <Campo label="E-mail" dica="Pra receber o código se esquecer a senha"><input type="email" value={f.email} onChange={set("email")} autoComplete="off" /></Campo>
+          <Campo label="Celular (WhatsApp)" dica="Barbeiro e cliente usam o da ficha se ficar vazio"><input value={f.telefone} onChange={set("telefone")} inputMode="tel" autoComplete="off" /></Campo>
           <Campo label="Papel"><select value={f.papel} onChange={set("papel")}>{papeis.map((p) => <option key={p} value={p}>{PAPEIS[p]}</option>)}</select></Campo>
           {(f.papel === "GERENTE" || f.papel === "RECEPCAO") && (
             <Campo label="Unidade"><select value={f.unidadeId} onChange={set("unidadeId")} required disabled={!perms.admin}>
-              <option value="">Selecione...</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}</select></Campo>
+              <option value="">Selecione...</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}</select></Campo>
           )}
           {f.papel === "BARBEIRO" && (
             <Campo label="Ficha do barbeiro"><select value={f.barbeiroId} onChange={set("barbeiroId")} required>
-              <option value="">Selecione...</option>{(barbeiros.dados || []).map((b) => <option key={b.id} value={b.id}>{b.nome} · {b.unidadeNome.replace("Rede Barbearias — ", "")}</option>)}</select></Campo>
+              <option value="">Selecione...</option>{(barbeiros.dados || []).map((b) => <option key={b.id} value={b.id}>{b.nome} · {b.unidadeNome.replace(/^.*? — /, "")}</option>)}</select></Campo>
           )}
           {f.papel === "CLIENTE" && (
             <Campo label="Cliente vinculado" largo>
@@ -67,6 +72,11 @@ function ListaUsuarios() {
   const [papel, setPapel] = React.useState("");
   const confirmar = useConfirmar();
   const [executar] = useAcao();
+  const [gerado, setGerado] = React.useState(null);
+  const gerarCodigo = async (u) => {
+    const r = await executar(() => api(`/api/usuarios/${u.id}/codigo-senha`, { method: "POST" }));
+    if (r) setGerado(r);
+  };
   const lista = (req.dados || []).filter((u) => !papel || u.papel === papel);
   const [pagina, paginacao] = useTabela(lista, 20);
   const excluir = async (u) => {
@@ -91,10 +101,11 @@ function ListaUsuarios() {
                   <tr key={u.id} className={u.ativo ? "" : "inativo"}>
                     <td><b>{u.username}</b>{u.nome && <><br /><small className="texto-fraco">{u.nome}</small></>}</td>
                     <td><Pill tom={u.papel === "ADMIN" ? "ouro" : "neutro"}>{PAPEIS[u.papel]}</Pill>{!u.ativo && <> <Pill tom="ruim">bloqueado</Pill></>}</td>
-                    <td>{u.barbeiroNome || u.clienteNome || (u.unidadeNome ? u.unidadeNome.replace("Rede Barbearias — ", "") : "Rede inteira")}</td>
+                    <td>{u.barbeiroNome || u.clienteNome || (u.unidadeNome ? u.unidadeNome.replace(/^.*? — /, "") : "Rede inteira")}</td>
                     <td>{u.ultimoLogin ? dataHora(u.ultimoLogin) : <span className="texto-fraco">nunca</span>}</td>
                     <td className="acoes-celula">
                       <button className="btn-icone" title="Editar" onClick={() => setForm(u)}>✏️</button>
+                      {u.username !== sessao.username && u.ativo && <button className="btn-icone" title="Gerar código de nova senha" onClick={() => gerarCodigo(u)}>🔑</button>}
                       {u.username !== sessao.username && <button className="btn-icone" title="Excluir" onClick={() => excluir(u)}>🗑️</button>}
                     </td>
                   </tr>
@@ -105,6 +116,7 @@ function ListaUsuarios() {
           </>
         )}
       </Estado>
+      {gerado && <CodigoGerado dados={gerado} onClose={() => setGerado(null)} />}
       {form && <UsuarioForm usuario={form.id ? form : null} onClose={() => setForm(null)} onSalvo={() => { setForm(null); req.recarregar(); }} />}
     </>
   );
@@ -140,11 +152,19 @@ function Auditoria() {
 export default function Usuarios() {
   const { perms } = usePainel();
   const [aba, setAba] = React.useState("usuarios");
+  if (perms.recepcao) {
+    return (
+      <div>
+        <Cabecalho titulo="Senhas de clientes" sub="Ajude quem esqueceu a senha do site ou do app" />
+        <PedidosSenha />
+      </div>
+    );
+  }
   return (
     <div>
       <Cabecalho titulo="Usuários e acessos" sub={perms.admin ? "Quem entra no sistema e o que pode fazer" : "Contas da recepção e barbeiros da sua unidade"} />
       {perms.admin && <Abas abas={[["usuarios", "Usuários"], ["auditoria", "Auditoria (quem fez o quê)"]]} atual={aba} onChange={setAba} />}
-      {aba === "usuarios" ? <ListaUsuarios /> : <Auditoria />}
+      {aba === "usuarios" ? <><PedidosSenha /><ListaUsuarios /></> : <Auditoria />}
     </div>
   );
 }

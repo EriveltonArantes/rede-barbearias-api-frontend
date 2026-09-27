@@ -67,7 +67,7 @@ export default function Avaliacoes() {
                 <div key={a.id} className={"cartao avaliacao" + (a.nota <= 3 ? " baixa" : "")}>
                   <div className="acoes-linha entre"><Estrelas nota={a.nota} tamanho={16} /><small className="texto-fraco">{dataBR(a.criadaEm)}</small></div>
                   <p className="citacao">{a.comentario || <i className="texto-fraco">sem comentário</i>}</p>
-                  <small className="texto-fraco"><b>{a.clienteNome}</b> · {a.servicoNome} com {a.barbeiroNome} · {a.unidadeNome.replace("Rede Barbearias — ", "")}</small>
+                  <small className="texto-fraco"><b>{a.clienteNome}</b> · {a.servicoNome} com {a.barbeiroNome} · {a.unidadeNome.replace(/^.*? — /, "")}</small>
                   {a.resposta && <p className="resposta">↳ {a.resposta}</p>}
                   <div className="acoes-linha entre">
                     {!a.publica ? <Pill>oculta do site</Pill> : <span></span>}

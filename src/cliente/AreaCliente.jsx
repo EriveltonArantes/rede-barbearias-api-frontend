@@ -1,4 +1,5 @@
 import React from "react";
+import { Logo, marcaAtual } from "../marca.jsx";
 import { api } from "../api.js";
 import AgendarOnline from "../site/AgendarOnline.jsx";
 import { TrocarSenha } from "../painel/MinhaConta.jsx";
@@ -36,7 +37,7 @@ function MeusHorarios({ onAgendar }) {
                   <p className="texto-fraco">📍 {a.unidadeNome} — {a.unidadeEndereco}</p>
                   <p>{Number(a.desconto) > 0 ? <><s>{moeda(a.valor)}</s> {moeda(a.valorAPagar)}</> : moeda(a.valor)}</p>
                   <div className="acoes-linha">
-                    <a className="btn btn-ghost btn-sm" target="_blank" rel="noreferrer" href={linkGoogleAgenda({ titulo: `${a.servicoNome} — Rede Barbearias`, inicio: a.inicio, fim: a.fim, local: a.unidadeEndereco, detalhes: "Código " + a.codigo })}>📅 Agenda</a>
+                    <a className="btn btn-ghost btn-sm" target="_blank" rel="noreferrer" href={linkGoogleAgenda({ titulo: `${a.servicoNome} — ${marcaAtual().nome}`, inicio: a.inicio, fim: a.fim, local: a.unidadeEndereco, detalhes: "Código " + a.codigo })}>📅 Agenda</a>
                     {a.podeCancelar ? <button className="btn btn-ghost btn-sm" onClick={() => cancelar(a)}>Cancelar</button> : <small className="texto-fraco">Pra cancelar agora, fale com a unidade.</small>}
                   </div>
                 </div>
@@ -183,7 +184,7 @@ export default function AreaCliente({ sessao, onSair }) {
     <PainelCtx.Provider value={{ sessao, papel: "CLIENTE", unidades: [], unidadeId: "", irPara: () => {} }}>
       <div className="area-cliente">
         <header className="cliente-topo">
-          <a className="site-brand" href="#/">💈 Rede Barbearias<span className="site-brand-dot">.</span></a>
+          <a className="site-brand" href="#/"><Logo pontoClasse="site-brand-dot" /></a>
           <div className="acoes-linha">
             <span>Olá, {primeiroNome(ficha.dados?.cliente.nome || sessao.nome)}</span>
             <a className="btn btn-ghost btn-sm" href="#/" onClick={onSair}>Sair</a>

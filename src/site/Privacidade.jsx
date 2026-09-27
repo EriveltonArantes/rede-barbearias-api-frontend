@@ -1,4 +1,5 @@
 import React from "react";
+import { marcaAtual } from "../marca.jsx";
 import { useApi } from "../ui.jsx";
 
 /**
@@ -7,7 +8,7 @@ import { useApi } from "../ui.jsx";
  */
 export default function Privacidade() {
   const p = useApi("/api/publico/politicas").dados || {};
-  const empresa = p.razaoSocial || "Rede Barbearias";
+  const empresa = p.razaoSocial || marcaAtual().nome;
   const contato = p.emailPrivacidade;
   return (
     <article className="privacidade">

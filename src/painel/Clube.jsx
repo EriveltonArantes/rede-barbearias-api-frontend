@@ -79,7 +79,7 @@ function AssinarModal({ onClose, onFeito }) {
             {(planos.dados || []).map((p) => <option key={p.id} value={p.id}>{p.nome} — {moeda(p.precoMensal)}/mês</option>)}
           </select>
         </Campo>
-        <Campo label="Unidade que recebe"><select value={f.unidadeId} onChange={(e) => setF({ ...f, unidadeId: e.target.value })}>{unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}</select></Campo>
+        <Campo label="Unidade que recebe"><select value={f.unidadeId} onChange={(e) => setF({ ...f, unidadeId: e.target.value })}>{unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}</select></Campo>
         <Campo label="Pagamento do 1º mês" largo>
           <div className="formas">{FORMAS_PAGAVEIS.map((fp) => <button type="button" key={fp} className={"forma" + (f.formaPagamento === fp ? " sel" : "")} onClick={() => setF({ ...f, formaPagamento: fp })}>{FORMAS[fp]}</button>)}</div>
         </Campo>
@@ -101,7 +101,7 @@ function RenovarModal({ assinatura, onClose, onFeito }) {
            rodape={<><button className="btn btn-ghost" onClick={onClose}>Cancelar</button><button className="btn btn-primary" disabled={ocupado} onClick={salvar}>Receber {moeda(assinatura.precoMensal)}</button></>}>
       <p>{assinatura.planoNome} · válido até {dataBR(assinatura.validaAte)}. A renovação abre um novo ciclo de {assinatura.usosPorMes} atendimentos.</p>
       <Grade>
-        <Campo label="Unidade"><select value={f.unidadeId} onChange={(e) => setF({ ...f, unidadeId: e.target.value })}>{unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}</select></Campo>
+        <Campo label="Unidade"><select value={f.unidadeId} onChange={(e) => setF({ ...f, unidadeId: e.target.value })}>{unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}</select></Campo>
         <Campo label="Forma"><select value={f.formaPagamento} onChange={(e) => setF({ ...f, formaPagamento: e.target.value })}>{FORMAS_PAGAVEIS.map((fp) => <option key={fp} value={fp}>{FORMAS[fp]}</option>)}</select></Campo>
       </Grade>
     </Modal>

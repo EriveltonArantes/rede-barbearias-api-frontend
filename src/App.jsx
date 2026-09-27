@@ -23,6 +23,10 @@ import SinaisEspera from "./painel/SinaisEspera.jsx";
 import Regras from "./painel/Regras.jsx";
 import MinhaConta from "./painel/MinhaConta.jsx";
 import AreaCliente from "./cliente/AreaCliente.jsx";
+import MarcaPagina from "./painel/Marca.jsx";
+import SaudeSistema from "./painel/SaudeSistema.jsx";
+import { Logo, MarcaProvider } from "./marca.jsx";
+import InstalarApp from "./InstalarApp.jsx";
 
 /** Hash de rota: #/agendar, #/meu-horario/CODIGO, #/login, #/painel/agenda ... */
 function useHash() {
@@ -51,7 +55,9 @@ const PAGINAS = {
   sinais: { rotulo: "Sinais e espera", icone: "⏳", comp: SinaisEspera, papeis: ["ADMIN", "GERENTE", "RECEPCAO"] },
   regras: { rotulo: "Regras e automações", icone: "🧩", comp: Regras, papeis: ["ADMIN", "GERENTE"] },
   notificacoes: { rotulo: "Notificações", icone: "🔔", comp: Notificacoes, papeis: ["ADMIN", "GERENTE"] },
-  usuarios: { rotulo: "Usuários", icone: "🔐", comp: Usuarios, papeis: ["ADMIN", "GERENTE"] },
+  usuarios: { rotulo: "Usuários", icone: "🔐", comp: Usuarios, papeis: ["ADMIN", "GERENTE", "RECEPCAO"], rotuloPor: { RECEPCAO: "Senhas de clientes" } },
+  marca: { rotulo: "Marca e aparência", icone: "🎨", comp: MarcaPagina, papeis: ["ADMIN"] },
+  sistema: { rotulo: "Saúde do sistema", icone: "🩺", comp: SaudeSistema, papeis: ["ADMIN"] },
   conta: { rotulo: "Minha conta", icone: "⚙️", comp: MinhaConta, papeis: ["ADMIN", "GERENTE", "RECEPCAO", "BARBEIRO"] },
 };
 
@@ -86,7 +92,7 @@ function Painel({ sessao, onSair }) {
     <PainelCtx.Provider value={{ sessao, papel, perms, unidades, unidadeId: unidadeEfetiva, setUnidadeId, irPara }}>
       <div className="app-shell">
         <aside className={"sidebar" + (menuAberto ? " aberta" : "")}>
-          <div className="sidebar-logo">💈 Rede Barbearias<span className="dot">.</span></div>
+          <div className="sidebar-logo"><Logo tamanho={26} /></div>
           <nav className="sidebar-nav">
             {Object.entries(PAGINAS).filter(([, p]) => p.papeis.includes(papel)).map(([k, p]) => (
               <a key={k} href={"#/painel/" + k} className={"nav-btn" + (k === chave ? " active" : "")} aria-current={k === chave ? "page" : undefined}>
@@ -112,10 +118,11 @@ function Painel({ sessao, onSair }) {
               {perms.admin ? (
                 <select className="sel-unidade" value={unidadeId} onChange={(e) => setUnidadeId(e.target.value)} aria-label="Unidade">
                   <option value="">🏢 Rede inteira</option>
-                  {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace("Rede Barbearias — ", "")}</option>)}
+                  {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome.replace(/^.*? — /, "")}</option>)}
                 </select>
-              ) : sessao.unidadeNome && <span className="topbar-unidade">🏪 {sessao.unidadeNome.replace("Rede Barbearias — ", "")}</span>}
+              ) : sessao.unidadeNome && <span className="topbar-unidade">🏪 {sessao.unidadeNome.replace(/^.*? — /, "")}</span>}
               <span className="topbar-greeting">Olá, {String(sessao.nome || sessao.username).split(" ")[0]}</span>
+              <InstalarApp variante="botao" />
               <span className="role-badge">{PAPEIS[papel]}</span>
             </div>
           </div>
@@ -163,8 +170,10 @@ export default function App() {
   }, [hash, sessao]);
 
   return (
+    <MarcaProvider>
     <ToastProvider>
-      <ConfirmProvider>{tela}</ConfirmProvider>
+      <ConfirmProvider>{tela}{!hash.startsWith("#/painel") && !hash.startsWith("#/login") && <InstalarApp />}</ConfirmProvider>
     </ToastProvider>
+    </MarcaProvider>
   );
 }

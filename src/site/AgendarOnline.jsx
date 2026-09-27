@@ -1,4 +1,5 @@
 import React from "react";
+import { marcaAtual } from "../marca.jsx";
 import { api, qs } from "../api.js";
 import { Avatar, Carregando, Estrelas, Erro, useApi } from "../ui.jsx";
 import {
@@ -172,7 +173,7 @@ export default function AgendarOnline({ clienteLogado, onConcluido, onVoltar }) 
 
       {esc.unidade && passo > 1 && passo < 6 && (
         <div className="resumo-escolha">
-          <span>📍 {esc.unidade.nome.replace("Rede Barbearias — ", "")}</span>
+          <span>📍 {esc.unidade.nome.replace(/^.*? — /, "")}</span>
           {esc.servico && <span>✂️ {esc.servico.nome} · {moeda(esc.servico.preco)}</span>}
           {passo > 3 && <span>💈 {esc.barbeiro ? (esc.barbeiro.apelido || esc.barbeiro.nome) : "Sem preferência"}</span>}
           {esc.slot && <span>🗓️ {dataExtenso(esc.data)} às {esc.slot.hora}</span>}
@@ -186,7 +187,7 @@ export default function AgendarOnline({ clienteLogado, onConcluido, onVoltar }) 
             <div className="opcoes-grid">
               {unidades.dados.map((u) => (
                 <button key={u.id} className="opcao" onClick={() => escolher("unidade", u, 2)}>
-                  <b>{u.nome.replace("Rede Barbearias — ", "")}</b>
+                  <b>{u.nome.replace(/^.*? — /, "")}</b>
                   <span>{u.endereco} · {u.bairro}</span>
                   <small>{u.horaAbertura.slice(0, 5)}–{u.horaFechamento.slice(0, 5)}</small>
                 </button>
@@ -347,7 +348,7 @@ export default function AgendarOnline({ clienteLogado, onConcluido, onVoltar }) 
           <div className="codigo-box">Código do agendamento<b>{confirmado.codigo}</b><small>Guarde pra consultar ou cancelar.</small></div>
           <div className="agendar-acoes centro">
             <a className="btn btn-ghost" target="_blank" rel="noreferrer" href={linkGoogleAgenda({
-              titulo: `${confirmado.servicoNome} — Rede Barbearias`, inicio: confirmado.inicio, fim: confirmado.fim,
+              titulo: `${confirmado.servicoNome} — ${marcaAtual().nome}`, inicio: confirmado.inicio, fim: confirmado.fim,
               local: `${confirmado.unidadeNome}, ${confirmado.unidadeEndereco}`, detalhes: `Código ${confirmado.codigo} com ${confirmado.barbeiroNome}`,
             })}>📅 Salvar na agenda</a>
             {confirmado.unidadeWhatsapp && (
