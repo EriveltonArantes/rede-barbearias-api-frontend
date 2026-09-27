@@ -4,7 +4,7 @@ import AgendarOnline from "../site/AgendarOnline.jsx";
 import { TrocarSenha } from "../painel/MinhaConta.jsx";
 import { Abas, Campo, Estado, Estrelas, Grade, Kpi, Modal, StatusPill, Vazio, useAcao, useApi, useConfirmar } from "../ui.jsx";
 import { PainelCtx } from "../contexto.js";
-import { dataExtenso, dataBR, hora, linkGoogleAgenda, moeda, primeiroNome, telefone } from "../util.js";
+import { baixarJSON, dataExtenso, dataBR, hora, linkGoogleAgenda, moeda, primeiroNome, telefone } from "../util.js";
 
 function MeusHorarios({ onAgendar }) {
   const req = useApi("/api/minha-conta/agendamentos");
@@ -112,7 +112,41 @@ function Beneficios({ ficha }) {
   );
 }
 
-function MeusDados({ ficha, onSalvo }) {
+/** LGPD: baixar tudo e pedir exclusão. */
+function Privacidade({ onExcluido }) {
+  const [executar, ocupado] = useAcao();
+  const [excluindo, setExcluindo] = React.useState(false);
+  const [confirmacao, setConfirmacao] = React.useState("");
+  const baixar = async () => {
+    const r = await executar(() => api("/api/minha-conta/meus-dados"));
+    if (r) baixarJSON("meus-dados-rede-barbearias.json", r);
+  };
+  const excluir = async () => {
+    const r = await executar(() => api("/api/minha-conta/excluir-conta", { method: "POST", body: { confirmacao } }));
+    if (r) onExcluido(r.mensagem);
+  };
+  return (
+    <div className="cartao">
+      <h3>🔒 Privacidade</h3>
+      <p className="texto-fraco">Veja tudo que a barbearia guarda sobre você, ou peça pra apagar. <a href="#/privacidade">Política de privacidade</a></p>
+      <div className="acoes-linha">
+        <button type="button" className="btn btn-ghost" disabled={ocupado} onClick={baixar}>⬇️ Baixar meus dados</button>
+        <button type="button" className="btn btn-danger" onClick={() => setExcluindo(true)}>Excluir minha conta</button>
+      </div>
+      {excluindo && (
+        <Modal titulo="Excluir minha conta" onClose={() => setExcluindo(false)}
+               rodape={<><button className="btn btn-ghost" onClick={() => setExcluindo(false)}>Voltar</button>
+                 <button className="btn btn-danger" disabled={ocupado || confirmacao.trim().toUpperCase() !== "EXCLUIR"} onClick={excluir}>Excluir definitivamente</button></>}>
+          <p>Seus dados pessoais (nome, telefone, e-mail, aniversário, preferências e conversas) serão apagados e o login deixa de funcionar.
+            Horários marcados serão cancelados e seus pontos de fidelidade são perdidos. Isso não tem volta.</p>
+          <Campo label="Digite EXCLUIR pra confirmar"><input value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} autoFocus /></Campo>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function MeusDados({ ficha, onSalvo, onExcluido }) {
   const c = ficha.cliente;
   const [f, setF] = React.useState({ nome: c.nome, telefone: telefone(c.telefone), email: c.email || "", dataNascimento: c.dataNascimento || "", observacoes: c.observacoes || "", aceitaMarketing: c.aceitaMarketing });
   const [executar, ocupado] = useAcao();
@@ -134,7 +168,10 @@ function MeusDados({ ficha, onSalvo }) {
         </Grade>
         <button className="btn btn-primary" disabled={ocupado}>Salvar</button>
       </form>
-      <TrocarSenha />
+      <div className="coluna-empilhada">
+        <TrocarSenha />
+        <Privacidade onExcluido={onExcluido} />
+      </div>
     </div>
   );
 }
@@ -166,7 +203,7 @@ export default function AreaCliente({ sessao, onSair }) {
                 {aba === "horarios" && <MeusHorarios onAgendar={() => setAba("agendar")} />}
                 {aba === "agendar" && <div className="cartao"><AgendarOnline clienteLogado={f.cliente} onVoltar={() => { setAba("horarios"); ficha.recarregar(); }} /></div>}
                 {aba === "beneficios" && <Beneficios ficha={f} />}
-                {aba === "dados" && <MeusDados ficha={f} onSalvo={ficha.recarregar} />}
+                {aba === "dados" && <MeusDados ficha={f} onSalvo={ficha.recarregar} onExcluido={() => { onSair(); window.location.hash = "#/"; }} />}
               </>
             )}
           </Estado>

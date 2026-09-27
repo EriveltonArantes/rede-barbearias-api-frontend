@@ -3,7 +3,7 @@ import { api, getSessao, setSessao } from "./api.js";
 import { PainelCtx, permissoes } from "./contexto.js";
 import { ConfirmProvider, ToastProvider } from "./ui.jsx";
 import { PAPEIS } from "./util.js";
-import Site, { PaginaAgendar, PaginaMeuHorario } from "./site/Site.jsx";
+import Site, { PaginaAgendar, PaginaMeuHorario, PaginaPrivacidade } from "./site/Site.jsx";
 import Login from "./Login.jsx";
 import Dashboard from "./painel/Dashboard.jsx";
 import Agenda from "./painel/Agenda.jsx";
@@ -19,6 +19,8 @@ import Equipe from "./painel/Equipe.jsx";
 import Cadastros from "./painel/Cadastros.jsx";
 import Usuarios from "./painel/Usuarios.jsx";
 import Notificacoes from "./painel/Notificacoes.jsx";
+import SinaisEspera from "./painel/SinaisEspera.jsx";
+import Regras from "./painel/Regras.jsx";
 import MinhaConta from "./painel/MinhaConta.jsx";
 import AreaCliente from "./cliente/AreaCliente.jsx";
 
@@ -46,6 +48,8 @@ const PAGINAS = {
   avaliacoes: { rotulo: "Avaliações", icone: "💬", comp: Avaliacoes, papeis: ["ADMIN", "GERENTE", "RECEPCAO", "BARBEIRO"] },
   equipe: { rotulo: "Equipe e folgas", icone: "💈", comp: Equipe, papeis: ["ADMIN", "GERENTE", "RECEPCAO", "BARBEIRO"], rotuloPor: { BARBEIRO: "Minhas folgas", RECEPCAO: "Folgas" } },
   cadastros: { rotulo: "Unidades e serviços", icone: "🏪", comp: Cadastros, papeis: ["ADMIN", "GERENTE"] },
+  sinais: { rotulo: "Sinais e espera", icone: "⏳", comp: SinaisEspera, papeis: ["ADMIN", "GERENTE", "RECEPCAO"] },
+  regras: { rotulo: "Regras e automações", icone: "🧩", comp: Regras, papeis: ["ADMIN", "GERENTE"] },
   notificacoes: { rotulo: "Notificações", icone: "🔔", comp: Notificacoes, papeis: ["ADMIN", "GERENTE"] },
   usuarios: { rotulo: "Usuários", icone: "🔐", comp: Usuarios, papeis: ["ADMIN", "GERENTE"] },
   conta: { rotulo: "Minha conta", icone: "⚙️", comp: MinhaConta, papeis: ["ADMIN", "GERENTE", "RECEPCAO", "BARBEIRO"] },
@@ -144,6 +148,7 @@ export default function App() {
   let tela;
   const irLogin = () => { window.location.hash = sessao ? (sessao.papel === "CLIENTE" ? "#/minha-conta" : "#/painel/dashboard") : "#/login"; };
   if (hash.startsWith("#/agendar")) tela = <PaginaAgendar onEntrar={irLogin} />;
+  else if (hash.startsWith("#/privacidade")) tela = <PaginaPrivacidade onEntrar={irLogin} />;
   else if (hash.startsWith("#/meu-horario")) tela = <PaginaMeuHorario codigo={hash.split("/")[2] || ""} onEntrar={irLogin} />;
   else if (hash.startsWith("#/login")) tela = sessao ? null : <Login onLogin={entrar} onVoltar={() => { window.location.hash = "#/"; }} />;
   else if ((hash.startsWith("#/painel") || hash.startsWith("#/minha-conta")) && !sessao) tela = <Login onLogin={entrar} onVoltar={() => { window.location.hash = "#/"; }} />;

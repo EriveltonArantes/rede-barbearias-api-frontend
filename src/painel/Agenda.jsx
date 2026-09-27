@@ -2,12 +2,12 @@ import React from "react";
 import { api, qs } from "../api.js";
 import { usePainel } from "../contexto.js";
 import {
-  Avatar, Campo, Carregando, Erro, Grade, Modal, PixCobranca, StatusPill, useAcao, useApi, useConfirmar,
+  Avatar, Campo, Carregando, Erro, Grade, Modal, Pill, PixCobranca, StatusPill, useAcao, useApi, useConfirmar,
 } from "../ui.jsx";
 import { HistoricoMensagens, LembretesDia } from "./Notificacoes.jsx";
 import {
   dataExtenso, FORMAS, FORMAS_PAGAVEIS, hhmmParaMin, hojeISO, hora, linkWhatsApp, minParaHHMM, minutosDoDia, moeda,
-  ORIGENS, primeiroNome, somarDias, STATUS, telefone,
+  ORIGENS, primeiroNome, SINAL, somarDias, STATUS, telefone,
 } from "../util.js";
 
 const PX_POR_MIN = 1.6;
@@ -172,6 +172,8 @@ export function FinalizarModal({ ag, onClose, onFeito }) {
         <div className="finalizar-valor">{Number(ag.desconto) > 0 && <s>{moeda(ag.valor)}</s>}{moeda(ag.valorAPagar)}</div>
       </div>
       {ag.cupomCodigo && <p className="texto-ok">Cupom {ag.cupomCodigo} aplicado: −{moeda(ag.desconto)}</p>}
+      {ag.sinalSituacao === "PAGO" && <p className="texto-ok">💠 Sinal de {moeda(ag.sinalValor)} já pago pelo Pix — já descontado do valor acima (se usar clube/cortesia, ele fica pra devolver).</p>}
+      {ag.sinalSituacao === "PENDENTE" && <p className="texto-erro">💠 O sinal de {moeda(ag.sinalValor)} não foi confirmado. Se o cliente pagou, marque “Recebi o Pix” no detalhe antes de finalizar.</p>}
       {ficha.carregando ? <Carregando /> : (
         <div className="modo-pagto">
           <button className={"modo" + (modo === "pagar" ? " sel" : "")} onClick={() => setModo("pagar")}>💳 Cobrar</button>
@@ -226,6 +228,11 @@ export function DetalheAgendamento({ ag: inicial, onClose, onMudou, unidadeId })
     const r = await executar(() => api(`/api/agendamentos/${ag.id}/lembrete`, { method: "PATCH" }));
     if (r) { setAg(r); onMudou(); }
   };
+  const sinal = async (acao, ok, pergunta) => {
+    if (pergunta && !(await confirmar(pergunta, { ok }))) return;
+    const r = await executar(() => api(`/api/agendamentos/${ag.id}/sinal?acao=${acao}`, { method: "POST" }), ok);
+    if (r) { setAg(r); onMudou(); }
+  };
   const excluir = async () => {
     if (!(await confirmar("Excluir definitivamente este agendamento? (use cancelar pra manter o histórico)", { perigo: true, ok: "Excluir" }))) return;
     const r = await executar(() => api("/api/agendamentos/" + ag.id, { method: "DELETE" }), "Agendamento excluído");
@@ -249,6 +256,14 @@ export function DetalheAgendamento({ ag: inicial, onClose, onMudou, unidadeId })
         <dt>Cliente</dt><dd>{ag.clienteNome} · {telefone(ag.clienteTelefone)}</dd>
         <dt>Valor</dt><dd>{moeda(ag.valorAPagar)}{Number(ag.desconto) > 0 && <small className="texto-fraco"> (tabela {moeda(ag.valor)}, desconto {moeda(ag.desconto)})</small>}</dd>
         {ag.pago && <><dt>Pago</dt><dd>{moeda(ag.valorFinal)} · {FORMAS[ag.formaPagamento]} · comissão {moeda(ag.comissaoValor)}</dd></>}
+        {ag.sinalSituacao && <><dt>Sinal</dt><dd>
+          {moeda(ag.sinalValor)} <Pill tom={SINAL[ag.sinalSituacao]?.tom}>{SINAL[ag.sinalSituacao]?.rotulo}</Pill>
+          {!perms.barbeiro && ag.sinalSituacao === "PENDENTE" && !ag.sinalAutomatico && <button className="link-btn" onClick={() => sinal("RECEBIDO", "Sinal recebido", `Confirmar que o Pix de ${moeda(ag.sinalValor)} caiu na conta?`)}>💠 Recebi o Pix</button>}
+          {!perms.barbeiro && ag.sinalSituacao === "A_DEVOLVER" && <>
+            <button className="link-btn" onClick={() => sinal("DEVOLVIDO", "Marcado como devolvido", `Já devolveu ${moeda(ag.sinalValor)} pro cliente?`)}>↩️ Devolvi</button>
+            <button className="link-btn" onClick={() => sinal("RETER", "Sinal retido", "Ficar com o sinal? Ele entra como receita.")}>Reter</button>
+          </>}
+        </dd></>}
         <dt>Origem</dt><dd>{ORIGENS[ag.origem]}{ag.lembreteEnviado ? " · lembrete enviado ✓" : ""}</dd>
         {ag.observacao && <><dt>Obs.</dt><dd>{ag.observacao}</dd></>}
         {ag.motivoCancelamento && <><dt>Motivo</dt><dd>{ag.motivoCancelamento}</dd></>}

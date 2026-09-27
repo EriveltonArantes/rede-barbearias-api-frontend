@@ -460,3 +460,24 @@ input:disabled, select:disabled { opacity: .6; }
 .chip:hover { border-color: var(--ouro); }
 .sem-resposta { color: #8696a0; font-style: italic; font-size: .8rem; align-self: center; }
 .acao-conversa { font-size: .82rem; font-weight: 600; }
+
+/* ---------------- sinal, lista de espera, regras, privacidade ---------------- */
+.sinal-bloco h4 { margin: 0 0 6px; }
+.pix-copia { display: block; font-size: .7rem; background: #f3f3f3; color: #333; border-radius: 6px; padding: 6px 8px; max-height: 64px; overflow: auto; word-break: break-all; }
+.sinal-status { margin: 10px 0; font-weight: 600; }
+.aviso-sinal { color: var(--ouro-claro); }
+.consentimento { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 4px; font-size: .88rem; }
+.espera-link { display: inline-block; margin-top: 14px; font-size: .9rem; }
+.espera-form { margin-top: 16px; border: 1px dashed var(--borda); border-radius: 12px; padding: 14px; }
+.espera-form h4 { margin: 0 0 4px; }
+.espera-ok { margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--bom) 14%, transparent); border: 1px solid color-mix(in srgb, var(--bom) 40%, transparent); }
+.regras { display: flex; flex-direction: column; gap: 14px; }
+.regras .cartao h3 { margin-top: 0; }
+.rotulo-bloco { display: block; margin: 6px 0 2px; font-size: .85rem; }
+.coluna-empilhada { display: flex; flex-direction: column; gap: 14px; }
+.acoes-celula { white-space: nowrap; }
+.acoes-celula .btn { margin: 2px 4px 2px 0; }
+.privacidade h3 { margin: 22px 0 6px; font-size: 1.05rem; }
+.privacidade ul { padding-left: 20px; line-height: 1.6; }
+.privacidade p { line-height: 1.6; }
+@media (max-width: 640px) { .acoes-celula { white-space: normal; } }

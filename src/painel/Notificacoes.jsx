@@ -6,7 +6,8 @@ import { copiar, dataExtenso, dataHora, hojeISO, hora, linkWhatsApp, primeiroNom
 
 export const TIPOS_MSG = {
   CONFIRMACAO: "Confirmação", LEMBRETE: "Lembrete do dia", LEMBRETE_PROXIMO: "Lembrete 1h antes", REAGENDAMENTO: "Horário alterado",
-  CANCELAMENTO: "Cancelamento", AVALIACAO: "Pedido de avaliação",
+  CANCELAMENTO: "Cancelamento", AVALIACAO: "Pedido de avaliação", SINAL_PENDENTE: "Sinal pendente (Pix)",
+  VAGA_LIBERADA: "Vaga da lista de espera", ANIVERSARIO: "Aniversário", RETORNO: "Convite de retorno",
 };
 const CANAIS = { EMAIL: "✉️ E-mail", WHATSAPP: "💬 WhatsApp" };
 
@@ -126,6 +127,9 @@ export default function Notificacoes() {
                   <li><span>Alteração / cancelamento</span><small className="texto-fraco">na hora</small></li>
                   <li><span>Avaliação + cartela fidelidade</span><small className="texto-fraco">{duracao(c.horarios.avaliacaoAposMinutos)} depois do pagamento</small></li>
                   <li><span>Resposta automática</span><small className="texto-fraco">quando o cliente escreve no WhatsApp</small></li>
+                  <li><span>Sinal pendente</span><small className="texto-fraco">ao agendar online, quando a regra pede</small></li>
+                  <li><span>Vaga da lista de espera</span><small className="texto-fraco">na hora em que alguém cancela</small></li>
+                  <li><span>Aniversário / convite de retorno</span><small className="texto-fraco">1x, pra quem aceitou promoções (<a href="#/painel/regras">regras</a>)</small></li>
                 </ul>
               </div>
             </div>
@@ -159,7 +163,7 @@ export default function Notificacoes() {
                 <li>Na hora de adicionar o número, escolha a opção de <b>conectar o número que já está no app WhatsApp Business</b> e confirme pelo celular. Assim o sistema envia as mensagens e a equipe continua respondendo pelo celular, no mesmo número.
                   <br /><small className="texto-fraco">Se essa opção não aparecer pra sua conta, a Meta ainda não liberou: dá pra usar um número separado só pro sistema, ou continuar no modo manual (botão 🔔 Lembretes na Agenda), que já funciona hoje.</small></li>
                 <li>Gere um <b>token permanente</b> (usuário do sistema, permissões <code>whatsapp_business_messaging</code> e <code>whatsapp_business_management</code>) e anote o <i>Phone number ID</i>.</li>
-                <li>Em <i>Modelos de mensagem</i>, crie os modelos abaixo com o <b>mesmo nome</b>, categoria <b>Utilidade</b>, idioma <b>Português (BR)</b> — é só copiar o texto.
+                <li>Em <i>Modelos de mensagem</i>, crie os modelos abaixo com o <b>mesmo nome</b>, a <b>categoria indicada</b> (Utilidade ou Marketing), idioma <b>Português (BR)</b> — é só copiar o texto.
                   Nos lembretes, adicione os <b>botões de resposta rápida</b> indicados (é por eles que o cliente confirma ou cancela) e, em todos, o rodapé <i>"{c.rodapeWhatsApp}"</i>.</li>
                 <li>Em <i>WhatsApp → Configuração → Webhook</i>: URL de callback <WebhookUrl url={c.webhook.url} />, token de verificação = o valor que você colocar em <code>WHATSAPP_VERIFY_TOKEN</code> (invente uma senha), e assine o campo <code>messages</code>.</li>
                 <li>No Render, em <i>Environment</i> do serviço <code>rede-barbearias-api</code>: <code>WHATSAPP_TOKEN</code>, <code>WHATSAPP_PHONE_NUMBER_ID</code>, <code>WHATSAPP_VERIFY_TOKEN</code> e <code>WHATSAPP_APP_SECRET</code> (em <i>Configurações do app → Básico → Chave secreta</i>).</li>
@@ -169,7 +173,7 @@ export default function Notificacoes() {
                 {Object.entries(c.modelosWhatsApp).map(([nome, texto]) => (
                   <div key={nome} className="modelo-wpp">
                     <div className="acoes-linha entre">
-                      <code>{nome}</code>
+                      <span><code>{nome}</code> {c.categoriasWhatsApp?.[nome] && <Pill tom={c.categoriasWhatsApp[nome] === "Marketing" ? "aviso" : "neutro"}>{c.categoriasWhatsApp[nome]}</Pill>}</span>
                       <button type="button" className="btn btn-ghost btn-sm" onClick={() => { copiar(texto); setCopiado(nome); setTimeout(() => setCopiado(""), 1500); }}>{copiado === nome ? "Copiado ✓" : "Copiar texto"}</button>
                     </div>
                     <pre>{texto}</pre>
@@ -193,7 +197,7 @@ export default function Notificacoes() {
                 <thead><tr><th>Quando</th><th>Cliente</th><th>Mensagem</th><th>Canal</th><th>Destino</th><th>Situação</th></tr></thead>
                 <tbody>{pagina.map((n) => (
                   <tr key={n.id}>
-                    <td>{dataHora(n.dataHora)}</td><td>{n.clienteNome}<br /><small className="texto-fraco">#{n.codigo}</small></td>
+                    <td>{dataHora(n.dataHora)}</td><td>{n.clienteNome}<br />{n.codigo && <small className="texto-fraco">#{n.codigo}</small>}</td>
                     <td>{TIPOS_MSG[n.tipo]}</td><td>{CANAIS[n.canal]}</td><td>{n.destino}</td>
                     <td>{n.status === "ENVIADA" ? <Pill tom="bom">enviada</Pill> : <Pill tom="ruim" >falhou</Pill>}{n.erro && <><br /><small className="texto-erro">{n.erro}</small></>}</td>
                   </tr>

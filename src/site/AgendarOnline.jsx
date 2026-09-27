@@ -2,9 +2,66 @@ import React from "react";
 import { api, qs } from "../api.js";
 import { Avatar, Carregando, Estrelas, Erro, useApi } from "../ui.jsx";
 import {
-  CATEGORIAS_SERVICO, dataExtenso, diaSemana, hojeISO, hora, linkGoogleAgenda, linkWhatsApp, mensagemErro,
-  moeda, parseLocal, somarDias, telefone, telefoneValido,
+  CATEGORIAS_SERVICO, PERIODOS_ESPERA, dataExtenso, diaSemana, hojeISO, hora, linkGoogleAgenda, linkWhatsApp, mensagemErro,
+  moeda, paramsDoHash, parseLocal, somarDias, telefone, telefoneValido,
 } from "../util.js";
+import { SituacaoSinalCliente } from "./SinalPix.jsx";
+
+/** O sinal vai ser pedido nesse dia? (a regra "quem faltou" só dá pra saber depois do telefone) */
+function sinalPrevisto(regras, dataISO) {
+  if (!regras?.ativo) return false;
+  if (regras.sempre) return true;
+  const dow = parseLocal(dataISO).getDay();
+  return regras.fimDeSemana && (dow === 0 || dow === 6);
+}
+
+/** "Não achou horário?" — entra na lista de espera do dia escolhido. */
+function ListaEspera({ esc, dados, setDados, clienteLogado, aberta }) {
+  const [abrir, setAbrir] = React.useState(aberta);
+  const [periodo, setPeriodo] = React.useState("QUALQUER");
+  const [enviando, setEnviando] = React.useState(false);
+  const [feito, setFeito] = React.useState(null);
+  const [erro, setErro] = React.useState("");
+  React.useEffect(() => { setFeito(null); setErro(""); if (aberta) setAbrir(true); }, [esc.data, aberta]);
+
+  const entrar = async (e) => {
+    e.preventDefault();
+    setErro("");
+    const nome = clienteLogado?.nome || dados.nome;
+    const tel = clienteLogado?.telefone || dados.telefone;
+    if (!clienteLogado && (nome.trim().length < 3 || !telefoneValido(tel))) return setErro("Informe seu nome e um celular com DDD.");
+    setEnviando(true);
+    try {
+      setFeito(await api("/api/publico/lista-espera", { method: "POST", body: {
+        unidadeId: esc.unidade.id, servicoId: esc.servico.id, barbeiroId: esc.barbeiro?.id ?? null, data: esc.data, periodo,
+        nome, telefone: tel, email: dados.email || clienteLogado?.email || null, aceitaMarketing: clienteLogado ? null : dados.aceitaMarketing,
+      } }));
+    } catch (e2) { setErro(mensagemErro(e2)); }
+    finally { setEnviando(false); }
+  };
+
+  if (feito) return <div className="espera-ok">⏳ {feito.mensagem}</div>;
+  if (!abrir) return <button type="button" className="link-btn espera-link" onClick={() => setAbrir(true)}>Não achou o horário que queria? Entre na lista de espera de {dataExtenso(esc.data)} →</button>;
+  return (
+    <form className="espera-form" onSubmit={entrar}>
+      <h4>⏳ Lista de espera — {dataExtenso(esc.data)}</h4>
+      <p className="campo-dica">Se alguém desmarcar nesse dia, a gente te avisa na hora com o link pra agendar (quem agendar primeiro leva).</p>
+      <div className="form-grade">
+        <label className="campo"><span className="campo-label">Melhor período</span>
+          <select value={periodo} onChange={(e) => setPeriodo(e.target.value)}>
+            {Object.entries(PERIODOS_ESPERA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select></label>
+        {!clienteLogado && <>
+          <label className="campo"><span className="campo-label">Nome</span><input value={dados.nome} onChange={(e) => setDados({ ...dados, nome: e.target.value })} autoComplete="name" /></label>
+          <label className="campo"><span className="campo-label">Celular (WhatsApp)</span><input value={dados.telefone} inputMode="tel" placeholder="(31) 99999-9999" onChange={(e) => setDados({ ...dados, telefone: telefone(e.target.value) })} /></label>
+          <label className="campo"><span className="campo-label">E-mail (opcional)</span><input type="email" value={dados.email} onChange={(e) => setDados({ ...dados, email: e.target.value })} /></label>
+        </>}
+      </div>
+      {erro && <p className="texto-erro">{erro}</p>}
+      <button className="btn btn-primary" disabled={enviando}>{enviando ? "Entrando..." : "Entrar na lista de espera"}</button>
+    </form>
+  );
+}
 
 /**
  * Agendamento online em etapas: unidade → serviço → profissional → dia/horário → dados → confirmação.
@@ -15,7 +72,9 @@ export default function AgendarOnline({ clienteLogado, onConcluido, onVoltar }) 
   const servicos = useApi("/api/publico/servicos");
   const [passo, setPasso] = React.useState(1);
   const [esc, setEsc] = React.useState({ unidade: null, servico: null, barbeiro: null, data: hojeISO(), slot: null });
-  const [dados, setDados] = React.useState({ nome: clienteLogado?.nome || "", telefone: telefone(clienteLogado?.telefone || ""), email: clienteLogado?.email || "", cupom: "", observacao: "" });
+  const [dados, setDados] = React.useState({ nome: clienteLogado?.nome || "", telefone: telefone(clienteLogado?.telefone || ""), email: clienteLogado?.email || "", cupom: "", observacao: "", aceitaMarketing: false });
+  const politicas = useApi("/api/publico/politicas");
+  const regrasSinal = politicas.dados?.sinal;
   const [cupomInfo, setCupomInfo] = React.useState(null);
   const [erro, setErro] = React.useState("");
   const [enviando, setEnviando] = React.useState(false);
@@ -26,8 +85,28 @@ export default function AgendarOnline({ clienteLogado, onConcluido, onVoltar }) 
     ? "/api/publico/disponibilidade" + qs({ unidadeId: esc.unidade.id, servicoId: esc.servico.id, data: esc.data, barbeiroId: esc.barbeiro?.id })
     : null);
 
+  // link do aviso de vaga (#/agendar?unidade=1&servico=2&data=...&barbeiro=3): já abre no dia certo
+  const preenchido = React.useRef(false);
   React.useEffect(() => {
-    if (unidades.dados?.length === 1 && !esc.unidade) { setEsc((e) => ({ ...e, unidade: unidades.dados[0] })); setPasso(2); }
+    if (preenchido.current || !unidades.dados || !servicos.dados) return;
+    const q = paramsDoHash();
+    const u = unidades.dados.find((x) => String(x.id) === q.get("unidade"));
+    const sv = servicos.dados.find((x) => String(x.id) === q.get("servico"));
+    if (!u || !sv) return;
+    preenchido.current = true;
+    const data = /^\d{4}-\d{2}-\d{2}$/.test(q.get("data") || "") && q.get("data") >= hojeISO() ? q.get("data") : hojeISO();
+    setEsc((e) => ({ ...e, unidade: u, servico: sv, data, barbeiroPendente: q.get("barbeiro") }));
+    setPasso(4);
+  }, [unidades.dados, servicos.dados]);
+  React.useEffect(() => {
+    if (!esc.barbeiroPendente || !barbeiros.dados) return;
+    const b = barbeiros.dados.find((x) => String(x.id) === esc.barbeiroPendente);
+    setEsc((e) => ({ ...e, barbeiro: b || null, barbeiroPendente: null }));
+  }, [barbeiros.dados, esc.barbeiroPendente]);
+
+  React.useEffect(() => {
+    if (preenchido.current) return;
+    if (unidades.dados?.length === 1 && !esc.unidade && !paramsDoHash().get("unidade")) { setEsc((e) => ({ ...e, unidade: unidades.dados[0] })); setPasso(2); }
   }, [unidades.dados]);
 
   const escolher = (campo, valor, proximo) => {
@@ -55,6 +134,7 @@ export default function AgendarOnline({ clienteLogado, onConcluido, onVoltar }) 
         unidadeId: esc.unidade.id, servicoId: esc.servico.id, barbeiroId: esc.barbeiro?.id ?? esc.slot.barbeiroId ?? null,
         inicio: esc.slot.inicio, nome: dados.nome || clienteLogado?.nome, telefone: dados.telefone || clienteLogado?.telefone,
         email: dados.email || null, cupom: cupomInfo?.valido ? dados.cupom.trim() : null, observacao: dados.observacao || null,
+        aceitaMarketing: clienteLogado ? null : dados.aceitaMarketing,
       };
       const r = await api(clienteLogado ? "/api/minha-conta/agendamentos" : "/api/publico/agendamentos", { method: "POST", body: corpo });
       setConfirmado(r);
@@ -203,6 +283,9 @@ export default function AgendarOnline({ clienteLogado, onConcluido, onVoltar }) 
               </div>
             )}
           {erro && <p className="texto-erro">{erro}</p>}
+          {politicas.dados?.esperaAtiva && !slots.carregando && !slots.erro && (
+            <ListaEspera esc={esc} dados={dados} setDados={setDados} clienteLogado={clienteLogado} aberta={slots.dados?.length === 0} />
+          )}
         </section>
       )}
 
@@ -235,8 +318,17 @@ export default function AgendarOnline({ clienteLogado, onConcluido, onVoltar }) 
           <div className="total-agendar">
             <span>{esc.servico.nome}</span>
             {cupomInfo?.valido ? <b><s>{moeda(esc.servico.preco)}</s> {moeda(cupomInfo.valorFinal)}</b> : <b>{moeda(esc.servico.preco)}</b>}
-            <small>Pagamento na barbearia: Pix, cartão ou dinheiro.</small>
+            {sinalPrevisto(regrasSinal, esc.data)
+              ? <small className="aviso-sinal">💠 Esse horário pede um <b>sinal de {moeda(Math.min(Number(regrasSinal.valor), Number(cupomInfo?.valido ? cupomInfo.valorFinal : esc.servico.preco)))}</b> via Pix, descontado no dia. O restante você paga na barbearia.</small>
+              : <small>Pagamento na barbearia: Pix, cartão ou dinheiro.</small>}
           </div>
+          {!clienteLogado && (
+            <label className="check consentimento">
+              <input type="checkbox" checked={dados.aceitaMarketing} onChange={(e) => setDados({ ...dados, aceitaMarketing: e.target.checked })} />
+              Quero receber promoções, cupom de aniversário e novidades no WhatsApp/e-mail (opcional)
+            </label>
+          )}
+          <p className="campo-dica">Ao agendar você concorda com a <a href="#/privacidade" target="_blank" rel="noreferrer">política de privacidade</a>. Lembretes do horário são enviados mesmo sem marcar a opção acima.</p>
           {erro && <p className="texto-erro">{erro}</p>}
           <div className="agendar-acoes">
             <button className="btn btn-ghost" onClick={() => setPasso(4)}>← Trocar horário</button>
@@ -247,10 +339,11 @@ export default function AgendarOnline({ clienteLogado, onConcluido, onVoltar }) 
 
       {passo === 6 && confirmado && (
         <section className="confirmado">
-          <div className="confirmado-ico">✅</div>
-          <h3>Horário marcado, {confirmado.clientePrimeiroNome}!</h3>
+          <div className="confirmado-ico">{confirmado.sinalSituacao === "PENDENTE" ? "⏳" : "✅"}</div>
+          <h3>{confirmado.sinalSituacao === "PENDENTE" ? "Horário reservado" : "Horário marcado"}, {confirmado.clientePrimeiroNome}!</h3>
           <p className="confirmado-quando">{dataExtenso(confirmado.inicio.slice(0, 10))} às {hora(confirmado.inicio)}</p>
           <p>{confirmado.servicoNome} com <b>{confirmado.barbeiroNome}</b><br />{confirmado.unidadeNome} — {confirmado.unidadeEndereco}</p>
+          <SituacaoSinalCliente ag={confirmado} regras={regrasSinal} />
           <div className="codigo-box">Código do agendamento<b>{confirmado.codigo}</b><small>Guarde pra consultar ou cancelar.</small></div>
           <div className="agendar-acoes centro">
             <a className="btn btn-ghost" target="_blank" rel="noreferrer" href={linkGoogleAgenda({

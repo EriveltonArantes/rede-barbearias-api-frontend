@@ -58,6 +58,7 @@ function Resumo({ unidadeId }) {
                     <tr><td>Serviços</td><td>{moeda(r.receitaServicos)}</td></tr>
                     <tr><td>Produtos</td><td>{moeda(r.receitaProdutos)}</td></tr>
                     <tr><td>Clube (mensalidades)</td><td>{moeda(r.receitaClube)}</td></tr>
+                    {Number(r.receitaSinaisRetidos) > 0 && <tr><td>Sinais retidos (faltas / cancelamento tardio)</td><td>{moeda(r.receitaSinaisRetidos)}</td></tr>}
                     <tr className="dre-total"><td>Receita bruta</td><td>{moeda(r.receitaTotal)}</td></tr>
                     <tr><td>(−) Comissões</td><td>{moeda(r.comissoes)}</td></tr>
                     <tr><td>(−) Custo dos produtos</td><td>{moeda(r.custoProdutos)}</td></tr>

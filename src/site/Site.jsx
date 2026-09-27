@@ -2,6 +2,7 @@ import React from "react";
 import { Avatar, Estrelas, useApi } from "../ui.jsx";
 import { CATEGORIAS_SERVICO, diasLegiveis, linkWhatsApp, moeda, telefone } from "../util.js";
 import AgendarOnline from "./AgendarOnline.jsx";
+import Privacidade from "./Privacidade.jsx";
 import MeuHorario from "./MeuHorario.jsx";
 
 const MARQUEE = ["💈 Corte Clássico", "🪒 Barba Terapia", "✂️ Degradê na Régua", "🧔 Pigmentação de Barba", "🔥 Platinado",
@@ -60,6 +61,7 @@ function Rodape({ unidades, onEntrar }) {
           <div>
             <h4>Acesso</h4>
             <p><a className="site-link-claro" href="#/meu-horario">Consultar ou cancelar meu horário</a></p>
+            <p><a className="site-link-claro" href="#/privacidade">Política de privacidade</a></p>
             <p className="site-footer-texto">Clientes: acompanhe pontos e o clube. Equipe: agenda, caixa e gestão.</p>
             <button className="site-btn-entrar" onClick={onEntrar}>Entrar no sistema</button>
           </div>
@@ -95,6 +97,14 @@ export function PaginaAgendar({ onEntrar }) {
   return (
     <PaginaSite titulo="Agende seu horário" sub="Leva menos de um minuto. Você recebe um código pra consultar ou cancelar quando quiser." onEntrar={onEntrar}>
       <AgendarOnline />
+    </PaginaSite>
+  );
+}
+
+export function PaginaPrivacidade({ onEntrar }) {
+  return (
+    <PaginaSite titulo="Política de privacidade" sub="Quais dados guardamos, pra quê, e como ver ou apagar os seus." onEntrar={onEntrar}>
+      <Privacidade />
     </PaginaSite>
   );
 }

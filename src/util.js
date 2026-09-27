@@ -150,3 +150,33 @@ export function mensagemErro(e) {
   if (e.campos) return Object.entries(e.campos).map(([k, v]) => `${k}: ${v}`).join(" · ");
   return e.message || String(e);
 }
+
+/** Situação do sinal por Pix (mesmos nomes do backend). */
+export const SINAL = {
+  PENDENTE: { rotulo: "aguardando Pix", tom: "aviso" },
+  PAGO: { rotulo: "pago", tom: "bom" },
+  ABATIDO: { rotulo: "descontado no dia", tom: "bom" },
+  A_DEVOLVER: { rotulo: "a devolver", tom: "aviso" },
+  DEVOLVIDO: { rotulo: "devolvido", tom: "neutro" },
+  RETIDO: { rotulo: "retido (falta/cancelamento tardio)", tom: "ruim" },
+  EXPIRADO: { rotulo: "não pago", tom: "neutro" },
+};
+
+export const PERIODOS_ESPERA = { QUALQUER: "Qualquer horário", MANHA: "Manhã (até 12h)", TARDE: "Tarde (12h–18h)", NOITE: "Noite (depois das 18h)" };
+
+/** Baixa um objeto como arquivo .json (ex.: "meus dados" da LGPD). */
+export function baixarJSON(nome, dados) {
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+}
+
+/** Parâmetros depois do "?" na rota com hash (#/agendar?unidade=1&servico=2). */
+export function paramsDoHash() {
+  const h = typeof window === "undefined" ? "" : window.location.hash || "";
+  return new URLSearchParams(h.includes("?") ? h.slice(h.indexOf("?") + 1) : "");
+}

@@ -1,6 +1,7 @@
 import React from "react";
 import { api } from "../api.js";
-import { Estrelas, StatusPill } from "../ui.jsx";
+import { Estrelas, StatusPill, useApi } from "../ui.jsx";
+import { SituacaoSinalCliente } from "./SinalPix.jsx";
 import { dataExtenso, hora, linkWhatsApp, mensagemErro, moeda, telefone } from "../util.js";
 
 /** Consulta, cancelamento e avaliação do agendamento pelo código (sem login). */
@@ -14,6 +15,7 @@ export default function MeuHorario({ codigoInicial }) {
   const [nota, setNota] = React.useState(0);
   const [comentario, setComentario] = React.useState("");
   const [ocupado, setOcupado] = React.useState(false);
+  const politicas = useApi("/api/publico/politicas");
 
   const buscar = async (c = codigo) => {
     if (!c.trim()) return;
@@ -51,7 +53,8 @@ export default function MeuHorario({ codigoInicial }) {
                href={linkWhatsApp(ag.unidadeWhatsapp, `Olá! Sobre meu agendamento ${ag.codigo}...`)}>💬 Falar com a unidade</a>
           )}
 
-          {ag.status === "AGENDADO" && new Date(ag.inicio) > new Date() && (
+          <SituacaoSinalCliente ag={ag} regras={politicas.dados?.sinal} />
+          {ag.status === "AGENDADO" && new Date(ag.inicio) > new Date() && ag.sinalSituacao !== "PENDENTE" && (
             <div className="bloco-acao">
               <h4>Vai vir? Confirme sua presença</h4>
               <p className="campo-dica">Ajuda a barbearia a organizar a agenda — leva 1 segundo.</p>

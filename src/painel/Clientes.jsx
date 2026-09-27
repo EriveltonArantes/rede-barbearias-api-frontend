@@ -4,7 +4,7 @@ import { usePainel } from "../contexto.js";
 import {
   Cabecalho, Campo, Estado, Grade, Kpi, Modal, Pill, StatusPill, Vazio, useAcao, useApi, useConfirmar, useTabela,
 } from "../ui.jsx";
-import { baixarCSV, dataBR, dataHora, FORMAS, linkWhatsApp, moeda, primeiroNome, telefone } from "../util.js";
+import { baixarCSV, baixarJSON, dataBR, dataHora, FORMAS, linkWhatsApp, moeda, primeiroNome, telefone } from "../util.js";
 import { AgendamentoForm } from "./Agenda.jsx";
 
 function ClienteForm({ cliente, onClose, onSalvo }) {
@@ -50,7 +50,17 @@ function ClienteForm({ cliente, onClose, onSalvo }) {
 export function FichaCliente({ id, onClose, onEditar }) {
   const req = useApi("/api/clientes/" + id + "/ficha");
   const [agendar, setAgendar] = React.useState(false);
-  const { unidadeId, unidades } = usePainel();
+  const { unidadeId, unidades, perms } = usePainel();
+  const [executarLgpd] = useAcao();
+  const confirmarLgpd = useConfirmar();
+  const baixarDados = async (c) => {
+    const r = await executarLgpd(() => api(`/api/clientes/${c.id}/dados-pessoais`));
+    if (r) baixarJSON(`dados-${c.id}.json`, r);
+  };
+  const anonimizar = async (c) => {
+    if (!(await confirmarLgpd(`Excluir os dados pessoais de ${c.nome}? Nome, telefone, e-mail e conversas são apagados; o histórico financeiro fica anônimo. Não tem volta.`, { perigo: true, ok: "Excluir dados" }))) return;
+    if (await executarLgpd(() => api(`/api/clientes/${c.id}/anonimizar`, { method: "POST" }), "Dados do cliente excluídos")) req.recarregar();
+  };
   if (agendar) return <AgendamentoForm unidadeId={unidadeId || req.dados?.cliente.unidadePreferidaId || unidades[0]?.id} onClose={() => setAgendar(false)} onSalvo={() => { setAgendar(false); req.recarregar(); }} />;
   return (
     <Modal titulo="Ficha do cliente" onClose={onClose} largura={820}>
@@ -69,6 +79,8 @@ export function FichaCliente({ id, onClose, onEditar }) {
                   <a className="btn btn-ghost btn-sm" target="_blank" rel="noreferrer" href={linkWhatsApp(c.telefone, `Olá, ${primeiroNome(c.nome)}! Aqui é da Rede Barbearias 💈`)}>💬 WhatsApp</a>
                   {onEditar && <button className="btn btn-ghost btn-sm" onClick={() => onEditar(c)}>✏️ Editar</button>}
                   <button className="btn btn-primary btn-sm" onClick={() => setAgendar(true)}>+ Agendar</button>
+                  {perms?.gestao && !c.nome.startsWith("Cliente removido") && <button className="btn btn-ghost btn-sm" title="LGPD: dados que a barbearia guarda sobre o cliente" onClick={() => baixarDados(c)}>🔒 Dados</button>}
+                  {perms?.admin && !c.nome.startsWith("Cliente removido") && <button className="btn btn-ghost btn-sm texto-erro" title="LGPD: cliente pediu exclusão" onClick={() => anonimizar(c)}>Excluir dados</button>}
                 </div>
               </div>
               <div className="kpi-grid compacto">
